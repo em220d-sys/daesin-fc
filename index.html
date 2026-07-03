@@ -544,9 +544,157 @@ body{
 .ds.on{background:#f0883e;border-color:#f0883e;color:#0d1117;font-weight:700;}
 .draw-sep{width:1px;height:16px;background:#30363d;margin:0 2px;flex-shrink:0;}
 #draw-eraser-btn.on{background:#58a6ff !important;border-color:#58a6ff !important;color:#0d1117 !important;}
+
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE (≤ 768px)
+══════════════════════════════════════════ */
+#mobile-topbar,#mobile-tabs,#mobile-overlay{display:none;}
+
+@media(max-width:768px){
+  /* body */
+  body{overflow:hidden;}
+
+  /* mobile top bar */
+  #mobile-topbar{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 12px;background:#161b22;
+    border-bottom:1px solid #30363d;
+    flex-shrink:0;height:46px;z-index:1;
+  }
+  #mobile-topbar .mt-title{
+    font-size:13px;font-weight:700;letter-spacing:1px;flex:1;color:#e6edf3;
+  }
+  #mobile-topbar .mt-btn{
+    padding:5px 10px;border-radius:6px;border:1px solid #30363d;
+    background:#21262d;color:#c9d1d9;font-size:12px;cursor:pointer;white-space:nowrap;
+  }
+  #mobile-topbar .mt-btn.pri{background:#238636;border-color:#2ea043;color:#fff;font-weight:700;}
+
+  /* sidebar → bottom sheet */
+  #sidebar{
+    position:fixed;bottom:56px;left:0;right:0;
+    width:100% !important;min-width:unset;
+    height:70vh;z-index:400;
+    border-right:none;
+    border-top:2px solid #30363d;
+    border-radius:16px 16px 0 0;
+    transform:translateY(110%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 -12px 40px rgba(0,0,0,.85);
+  }
+  #sidebar.mob-open{transform:translateY(0);}
+  #sidebar::before{
+    content:'';display:block;
+    width:40px;height:4px;border-radius:2px;
+    background:#484f58;margin:8px auto 0;
+  }
+
+  /* mobile overlay */
+  #mobile-overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.55);z-index:390;
+  }
+  #mobile-overlay.mob-show{display:block;}
+
+  /* main */
+  #main{width:100%;}
+  #card{
+    display:flex;flex-direction:column;
+    height:100%;overflow:hidden;
+  }
+
+  /* mhdr: compact */
+  #mhdr{padding:5px 12px;}
+  .h-league{font-size:9px;}
+  .h-xi{font-size:18px;letter-spacing:4px;}
+  .h-vs{font-size:12px;gap:6px;}
+  .h-edit{padding:3px 7px;font-size:10px;}
+
+  /* ctrl bar: horizontal scroll */
+  #ctrl{
+    overflow-x:auto;flex-wrap:nowrap;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding:5px 8px;gap:5px;flex-shrink:0;
+  }
+  #ctrl::-webkit-scrollbar{display:none;}
+  #ctrl label{white-space:nowrap;}
+
+  /* draw ctrl: horizontal scroll */
+  #draw-ctrl{
+    overflow-x:auto;flex-wrap:nowrap;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  #draw-ctrl::-webkit-scrollbar{display:none;}
+
+  /* pitch area */
+  #pw{
+    flex:1;min-height:0;
+    padding:4px;gap:4px;
+    display:flex;align-items:flex-start;justify-content:center;
+    overflow:hidden;
+  }
+  #pitch-clip{
+    width:100% !important;
+    height:auto !important;
+    overflow:visible !important;
+    flex-shrink:1;
+  }
+  #pitch{
+    transform-origin:top left;
+    width:400px !important;
+    height:552px !important;
+  }
+
+  /* subs: compact */
+  #subs{flex-shrink:0;}
+  .subs-hd{padding:3px 10px;}
+  .subs-hd h4{font-size:11px;}
+
+  /* game panel → bottom sheet */
+  #game-panel{
+    position:fixed !important;
+    left:0 !important;right:0 !important;
+    bottom:56px !important;top:auto !important;
+    width:100% !important;
+    max-height:55vh;overflow-y:auto;
+    border-radius:16px 16px 0 0 !important;
+    border-left:none !important;border-right:none !important;border-bottom:none !important;
+    border-top:2px solid #30363d !important;
+    transform:translateY(110%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 -12px 40px rgba(0,0,0,.85);
+  }
+  #game-panel.gp-mob-show{transform:translateY(0);}
+  .gp-score-row{cursor:default !important;border-radius:16px 16px 0 0 !important;}
+
+  /* bottom tabs */
+  #mobile-tabs{
+    display:flex !important;
+    position:fixed;bottom:0;left:0;right:0;
+    height:56px;background:#161b22;
+    border-top:1px solid #30363d;z-index:500;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .mob-tab{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:1px;background:none;border:none;color:#8b949e;cursor:pointer;
+    font-size:8px;font-weight:700;letter-spacing:.3px;
+    transition:color .15s;padding:4px 0;
+  }
+  .mob-tab .mt-icon{font-size:20px;line-height:1.1;}
+  .mob-tab.mob-active{color:#f0883e;}
+  .mob-tab.gp-active{color:#3fb950;}
+
+  /* modals */
+  .mbox{width:94vw !important;max-height:82vh !important;overflow-y:auto;}
+}
 </style>
 </head>
 <body>
+
+<!-- 모바일 오버레이 -->
+<div id="mobile-overlay" onclick="closeMobileSidebar()"></div>
 
 <!-- 모달: JSON 가져오기 -->
 <div class="mbg" id="mImport">
@@ -741,6 +889,13 @@ body{
 <!-- ══ MAIN ══ -->
 <div id="main">
   <div id="card">
+    <!-- 모바일 전용 상단 바 (데스크탑 숨김) -->
+    <div id="mobile-topbar">
+      <button class="mt-btn" onclick="toggleMobileSidebar()">☰ 선수단</button>
+      <span class="mt-title">⚽ 대신FC</span>
+      <button class="mt-btn pri" onclick="applyFormation()">자동배치</button>
+      <button class="mt-btn" onclick="openMatchModal()">📋</button>
+    </div>
     <div id="mhdr">
       <div class="h-league" id="h-league">K6 대전광역시 디비전 리그</div>
       <div class="h-xi">STARTING XI</div>
@@ -1249,6 +1404,7 @@ function setPitchView(mode) {
     pitch.classList.remove('shift-up');
   }
   localStorage.setItem('dasinfc_view',mode);
+  if(typeof isMobileDevice === 'function' && isMobileDevice()) setTimeout(scalePitch,50);
 }
 
 // ══════════════════
@@ -2105,9 +2261,69 @@ function save(){
 }
 
 // ══════════════════
+// MOBILE HELPERS
+// ══════════════════
+function isMobileDevice(){ return window.innerWidth <= 768; }
+
+function scalePitch(){
+  if(!isMobileDevice()) return;
+  const clip = document.getElementById('pitch-clip');
+  const pr   = document.getElementById('pitch');
+  const clipW = clip.getBoundingClientRect().width;
+  if(clipW <= 0) return;
+  const scale = clipW / 400;
+  pr.style.transform       = `scale(${scale})`;
+  pr.style.transformOrigin = 'top left';
+  clip.style.height        = Math.round(552 * scale) + 'px';
+}
+
+function toggleMobileSidebar(){
+  const sb = document.getElementById('sidebar');
+  if(sb.classList.contains('mob-open')){ closeMobileSidebar(); return; }
+  switchTab('roster');
+  sb.classList.add('mob-open');
+  document.getElementById('mobile-overlay').classList.add('mob-show');
+  document.querySelectorAll('.mob-tab[data-tab]').forEach(b =>
+    b.classList.toggle('mob-active', b.dataset.tab === 'roster')
+  );
+}
+
+function closeMobileSidebar(){
+  document.getElementById('sidebar').classList.remove('mob-open');
+  document.getElementById('mobile-overlay').classList.remove('mob-show');
+  document.querySelectorAll('.mob-tab[data-tab]').forEach(b => b.classList.remove('mob-active'));
+}
+
+function openMobileTab(tab){
+  if(!isMobileDevice()){ switchTab(tab); return; }
+  const sb = document.getElementById('sidebar');
+  // 같은 탭이면 토글
+  const activeBtn = document.querySelector('.mob-tab.mob-active');
+  if(sb.classList.contains('mob-open') && activeBtn && activeBtn.dataset.tab === tab){
+    closeMobileSidebar(); return;
+  }
+  switchTab(tab);
+  sb.classList.add('mob-open');
+  document.getElementById('mobile-overlay').classList.add('mob-show');
+  document.querySelectorAll('.mob-tab[data-tab]').forEach(b =>
+    b.classList.toggle('mob-active', b.dataset.tab === tab)
+  );
+}
+
+function toggleMobileGamePanel(){
+  const panel = document.getElementById('game-panel');
+  const btn   = document.querySelector('.mob-tab[data-tab="gp"]');
+  const isOpen = panel.classList.contains('gp-mob-show');
+  panel.classList.toggle('gp-mob-show', !isOpen);
+  if(btn) btn.classList.toggle('gp-active', !isOpen);
+  closeMobileSidebar();
+}
+
+// ══════════════════
 // GAME PANEL DRAG
 // ══════════════════
 (function(){
+  if(isMobileDevice()) return; // 모바일: CSS bottom sheet 처리
   const panel  = document.getElementById('game-panel');
   const handle = document.getElementById('gp-drag-handle');
 
@@ -2190,6 +2406,24 @@ function save(){
 // ══════════════════
 setPitchView(pitchView);
 render();
+if(isMobileDevice()) setTimeout(scalePitch, 120);
+window.addEventListener('resize', ()=>{ if(isMobileDevice()) scalePitch(); });
 </script>
+
+<!-- 모바일 하단 탭 (데스크탑 숨김) -->
+<div id="mobile-tabs">
+  <button class="mob-tab" data-tab="roster" onclick="openMobileTab('roster')">
+    <span class="mt-icon">👥</span>선수단
+  </button>
+  <button class="mob-tab" data-tab="attend" onclick="openMobileTab('attend')">
+    <span class="mt-icon">✅</span>참석
+  </button>
+  <button class="mob-tab" data-tab="gp" onclick="toggleMobileGamePanel()">
+    <span class="mt-icon">⚽</span>경기기록
+  </button>
+  <button class="mob-tab" data-tab="add" onclick="openMobileTab('add')">
+    <span class="mt-icon">➕</span>추가
+  </button>
+</div>
 </body>
 </html>

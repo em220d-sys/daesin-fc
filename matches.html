@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대신FC — 경기 기록</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:#0d1117;color:#e6edf3;min-height:100vh;
+}
+
+/* ══ TOP BAR ══ */
+#top-bar{
+  background:linear-gradient(135deg,#7b0d0d 0%,#c0392b 55%,#e74c3c 100%);
+  padding:12px 20px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;
+}
+.top-logo{font-size:20px;font-weight:900;letter-spacing:4px;}
+.top-sub{font-size:11px;opacity:.8;letter-spacing:2px;flex:1;}
+.top-nav-btn{
+  padding:5px 13px;border-radius:5px;border:1px solid rgba(255,255,255,.4);
+  background:rgba(255,255,255,.15);color:#fff;text-decoration:none;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.top-nav-btn:hover{background:rgba(255,255,255,.28);}
+
+/* ══ CONTENT ══ */
+#content{max-width:860px;margin:0 auto;padding:20px 16px 40px;}
+
+/* ══ STATS ══ */
+.stats-row{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+.stat-card{
+  background:#161b22;border:1px solid #30363d;border-radius:8px;
+  padding:14px 16px;flex:1;min-width:110px;
+}
+.stat-val{font-size:24px;font-weight:900;color:#f0883e;line-height:1;}
+.stat-lbl{font-size:10px;color:#8b949e;margin-top:4px;line-height:1.4;}
+
+/* ══ SECTION HEADER ══ */
+.section-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.section-hd h2{font-size:13px;font-weight:700;color:#c9d1d9;}
+.cnt-badge{background:#30363d;color:#8b949e;padding:1px 7px;border-radius:8px;font-size:11px;}
+
+/* ══ GAME CARDS ══ */
+.game-list{display:flex;flex-direction:column;gap:8px;}
+
+.game-card{
+  background:#161b22;border:1px solid #30363d;border-radius:8px;
+  overflow:hidden;transition:border-color .15s;
+}
+.game-card:hover{border-color:#484f58;}
+.game-card.open{border-color:#f0883e;}
+
+.gc-hd{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  cursor:pointer;user-select:none;transition:background .15s;
+}
+.gc-hd:hover{background:rgba(255,255,255,.03);}
+.game-card.open .gc-hd{background:rgba(240,136,62,.05);}
+
+.gc-num{
+  font-size:12px;font-weight:700;color:#484f58;
+  min-width:28px;text-align:right;flex-shrink:0;
+}
+.gc-date{font-size:12px;color:#58a6ff;font-weight:700;min-width:90px;flex-shrink:0;}
+.gc-vs{flex:1;font-size:13px;font-weight:700;min-width:0;}
+.gc-venue{font-size:11px;color:#8b949e;flex-shrink:0;white-space:nowrap;}
+.gc-cnt-badge{
+  background:#1c2e1c;color:#3fb950;
+  padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;flex-shrink:0;
+}
+.gc-arrow{color:#484f58;font-size:10px;transition:transform .2s;flex-shrink:0;margin-left:4px;}
+.game-card.open .gc-arrow{transform:rotate(90deg);color:#f0883e;}
+
+/* ══ GAME DETAIL ══ */
+.gc-body{display:none;border-top:1px solid #30363d;}
+.game-card.open .gc-body{display:block;}
+
+.gc-info-row{
+  display:flex;gap:20px;padding:12px 16px 8px;flex-wrap:wrap;
+  border-bottom:1px solid #21262d;
+}
+.gc-info-item{font-size:12px;color:#8b949e;}
+.gc-info-item strong{color:#e6edf3;font-weight:700;}
+
+.gc-player-area{padding:12px 16px;}
+
+/* Position group */
+.pos-group{margin-bottom:12px;}
+.pos-group:last-child{margin-bottom:0;}
+.pos-group-hd{
+  display:flex;align-items:center;gap:6px;margin-bottom:6px;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+}
+.pos-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+.player-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:4px;
+}
+.pr-card{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 7px;border-radius:5px;background:#21262d;
+}
+.pr-num{
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff;
+}
+.pr-name{font-size:11px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ptag{font-size:9px;padding:1px 4px;border-radius:3px;background:#30363d;color:#8b949e;flex-shrink:0;}
+.age-tag-20{background:#1c3a1c;color:#56d364;}
+.age-tag-30{background:#1c2e3a;color:#58a6ff;}
+.age-tag-40{background:#3a2c1c;color:#f0883e;}
+.age-tag-50{background:#3a1c1c;color:#f85149;}
+
+/* Age bar */
+.age-bar-wrap{
+  margin:10px 16px 0;padding-top:10px;border-top:1px solid #21262d;
+}
+.age-bar-lbl{font-size:10px;color:#8b949e;margin-bottom:5px;}
+.age-bar-track{
+  display:flex;height:7px;border-radius:4px;overflow:hidden;gap:1px;background:#0d1117;
+}
+.age-seg{height:100%;transition:width .3s;}
+.age-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.age-leg-item{display:flex;align-items:center;gap:4px;font-size:10px;color:#8b949e;}
+.age-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* Actions */
+.gc-actions{
+  display:flex;gap:8px;padding:10px 16px 12px;border-top:1px solid #21262d;margin-top:8px;
+}
+.btn-load{
+  padding:6px 14px;border-radius:4px;border:1px solid #30363d;
+  background:#21262d;color:#c9d1d9;font-size:11px;cursor:pointer;
+  text-decoration:none;display:inline-block;transition:all .15s;
+}
+.btn-load:hover{background:#30363d;}
+.btn-del{
+  padding:6px 12px;border-radius:4px;border:1px solid #f85149;
+  background:none;color:#f85149;font-size:11px;cursor:pointer;transition:all .15s;
+  margin-left:auto;
+}
+.btn-del:hover{background:rgba(248,81,73,.1);}
+
+/* Empty state */
+.empty-state{
+  text-align:center;padding:60px 20px;color:#484f58;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.empty-icon{font-size:52px;opacity:.35;}
+.empty-state p{font-size:13px;line-height:1.8;}
+.empty-state a{
+  display:inline-block;padding:8px 18px;border-radius:5px;
+  background:#f0883e;color:#0d1117;font-weight:700;
+  text-decoration:none;font-size:12px;margin-top:4px;
+}
+
+@media(max-width:600px){
+  .stats-row{gap:7px;}
+  .stat-card{min-width:calc(50% - 4px);}
+  .gc-venue{display:none;}
+  .player-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));}
+}
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <div class="top-logo">대신FC</div>
+  <div class="top-sub">경기 기록</div>
+  <a href="index.html" class="top-nav-btn">← 작전판으로</a>
+</div>
+
+<div id="content">
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="section-hd">
+    <h2>경기 목록</h2>
+    <span class="cnt-badge" id="game-count-badge">0경기</span>
+  </div>
+
+  <div class="game-list" id="game-list"></div>
+</div>
+
+<script>
+const POS_COLOR = {GK:'#e67e22',DF:'#2980b9',MF:'#27ae60',FW:'#c0392b'};
+const AGE_CLASS  = {'20대':'age-tag-20','30대':'age-tag-30','40대':'age-tag-40','50대':'age-tag-50'};
+const AGE_COLOR  = {'20대':'#56d364','30대':'#58a6ff','40대':'#f0883e','50대':'#f85149'};
+const POS_ORDER  = {GK:0,DF:1,MF:2,FW:3};
+
+// localStorage 에서 읽기
+const gameLog = JSON.parse(localStorage.getItem('dasinfc_game_log') || '[]');
+const roster  = JSON.parse(localStorage.getItem('dasinfc_roster')   || '[]');
+
+function getPlayer(id) { return roster.find(p => p.id === id); }
+
+// ══ STATS ══
+function renderStats() {
+  const total = gameLog.length;
+  const totalAttend = gameLog.reduce((s,g)=>s+(g.attendees?.length||0), 0);
+  const avgAttend   = total ? (totalAttend/total).toFixed(1) : '-';
+
+  // 최다 참석 선수
+  const freq = {};
+  gameLog.forEach(g=>(g.attendees||[]).forEach(id=>{ freq[id]=(freq[id]||0)+1; }));
+  const topEntry = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  const topPlayer = topEntry ? getPlayer(topEntry[0]) : null;
+
+  // 최근 경기
+  const latest = [...gameLog].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-val">${total}</div>
+      <div class="stat-lbl">총 경기 수</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">${avgAttend}</div>
+      <div class="stat-lbl">평균 참석<br>인원</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">${roster.length}</div>
+      <div class="stat-lbl">등록 선수 수</div>
+    </div>
+    ${topPlayer ? `<div class="stat-card">
+      <div class="stat-val" style="font-size:17px;padding-top:3px;">${topPlayer.name}</div>
+      <div class="stat-lbl">최다 참석<br>(${topEntry[1]}경기)</div>
+    </div>` : ''}
+    ${latest ? `<div class="stat-card">
+      <div class="stat-val" style="font-size:15px;padding-top:4px;">${latest.date||'미입력'}</div>
+      <div class="stat-lbl">최근 경기일</div>
+    </div>` : ''}
+  `;
+}
+
+// ══ GAME LIST ══
+function renderGameList() {
+  const el  = document.getElementById('game-list');
+  const cnt = document.getElementById('game-count-badge');
+  cnt.textContent = `${gameLog.length}경기`;
+
+  if(!gameLog.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>저장된 경기 기록이 없습니다.<br>작전판 → <strong>참석</strong> 탭에서<br>날짜·상대·구장을 입력 후 저장하세요.</p>
+      <a href="index.html">← 작전판으로 이동</a>
+    </div>`;
+    return;
+  }
+
+  const sorted = [...gameLog].reverse();
+  el.innerHTML = sorted.map((g, i) => {
+    const cnt = g.attendees?.length || 0;
+    const num = gameLog.length - i;
+    return `<div class="game-card" id="gc-${g.id}">
+      <div class="gc-hd" onclick="toggleCard('${g.id}')">
+        <div class="gc-num">#${num}</div>
+        <div class="gc-date">${g.date || '날짜 미입력'}</div>
+        <div class="gc-vs">vs ${g.opp || '상대팀'}</div>
+        ${g.venue ? `<div class="gc-venue">${g.venue}</div>` : ''}
+        <div class="gc-cnt-badge">참석 ${cnt}명</div>
+        <div class="gc-arrow">▶</div>
+      </div>
+      <div class="gc-body" id="gcb-${g.id}"></div>
+    </div>`;
+  }).join('');
+}
+
+// ══ CARD TOGGLE ══
+function toggleCard(id) {
+  const card = document.getElementById('gc-'+id);
+  const body = document.getElementById('gcb-'+id);
+  const wasOpen = card.classList.contains('open');
+  document.querySelectorAll('.game-card.open').forEach(c=>c.classList.remove('open'));
+  if(!wasOpen) {
+    card.classList.add('open');
+    if(!body.dataset.loaded) { renderDetail(id, body); body.dataset.loaded='1'; }
+  }
+}
+
+// ══ DETAIL ══
+function renderDetail(id, bodyEl) {
+  const g = gameLog.find(x=>x.id===id);
+  if(!g) return;
+
+  const attendees = g.attendees || [];
+
+  // 포지션별 그룹핑
+  const byPos = {GK:[],DF:[],MF:[],FW:[]};
+  attendees.forEach(pid => {
+    const p = getPlayer(pid);
+    if(p && byPos[p.pos]) byPos[p.pos].push(p);
+  });
+  Object.values(byPos).forEach(arr => arr.sort((a,b)=>a.no-b.no));
+
+  const posGroups = Object.entries(byPos).filter(([,arr])=>arr.length).map(([pos,arr])=>{
+    const c  = POS_COLOR[pos]||'#888';
+    const cards = arr.map(p=>{
+      const ac = AGE_CLASS[p.age]||'';
+      return `<div class="pr-card">
+        <div class="pr-num" style="background:${c}">${p.no}</div>
+        <div class="pr-name">${p.name}</div>
+        ${p.age ? `<span class="ptag ${ac}">${p.age}</span>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="pos-group">
+      <div class="pos-group-hd">
+        <div class="pos-dot" style="background:${c}"></div>
+        <span style="color:${c}">${pos}</span>
+        <span style="color:#484f58;font-weight:400;">(${arr.length}명)</span>
+      </div>
+      <div class="player-grid">${cards}</div>
+    </div>`;
+  }).join('');
+
+  // 연령대 바
+  const ageCnt = {};
+  attendees.forEach(pid=>{
+    const p=getPlayer(pid);
+    const ag=p?.age||'기타';
+    ageCnt[ag]=(ageCnt[ag]||0)+1;
+  });
+  const total=attendees.length;
+  const ageSegs=Object.entries(ageCnt).filter(([,v])=>v>0);
+  const ageBarHtml = total ? `
+    <div class="age-bar-wrap">
+      <div class="age-bar-lbl">연령대 구성 (총 ${total}명)</div>
+      <div class="age-bar-track">
+        ${ageSegs.map(([age,cnt])=>`<div class="age-seg" style="background:${AGE_COLOR[age]||'#484f58'};width:${(cnt/total*100).toFixed(1)}%;"></div>`).join('')}
+      </div>
+      <div class="age-legend">
+        ${ageSegs.map(([age,cnt])=>`<div class="age-leg-item"><div class="age-dot" style="background:${AGE_COLOR[age]||'#484f58'}"></div>${age} ${cnt}명</div>`).join('')}
+      </div>
+    </div>` : '';
+
+  bodyEl.innerHTML = `
+    <div class="gc-info-row">
+      <div class="gc-info-item"><strong>${g.date||'날짜 미입력'}</strong>&nbsp; 날짜</div>
+      ${g.opp   ? `<div class="gc-info-item"><strong>vs ${g.opp}</strong>&nbsp; 상대팀</div>` : ''}
+      ${g.venue  ? `<div class="gc-info-item"><strong>${g.venue}</strong>&nbsp; 구장</div>` : ''}
+      <div class="gc-info-item"><strong>${total}명</strong>&nbsp; 참석</div>
+    </div>
+
+    <div class="gc-player-area">
+      ${total ? posGroups : '<div style="color:#484f58;font-size:12px;padding:10px 0;">참석 선수 없음</div>'}
+    </div>
+
+    ${ageBarHtml}
+
+    <div class="gc-actions">
+      <a href="index.html" class="btn-load" onclick="loadAndGo('${id}')">↩ 작전판에서 불러오기</a>
+      <button class="btn-del" onclick="deleteGame('${id}')">삭제</button>
+    </div>
+  `;
+}
+
+// ══ ACTIONS ══
+function loadAndGo(id) {
+  const g = gameLog.find(x=>x.id===id);
+  if(!g) return;
+  localStorage.setItem('dasinfc_current_game_id',   id);
+  localStorage.setItem('dasinfc_current_game_info', JSON.stringify({date:g.date||'',opp:g.opp||'',venue:g.venue||''}));
+  localStorage.setItem('dasinfc_attendees',          JSON.stringify(g.attendees||[]));
+  // 작전판 이동은 href="index.html" 으로 처리
+}
+
+function deleteGame(id) {
+  if(!confirm('이 경기 기록을 삭제하시겠습니까?')) return;
+  const log = JSON.parse(localStorage.getItem('dasinfc_game_log')||'[]');
+  localStorage.setItem('dasinfc_game_log', JSON.stringify(log.filter(g=>g.id!==id)));
+  location.reload();
+}
+
+// ══ INIT ══
+renderStats();
+renderGameList();
+</script>
+</body>
+</html>

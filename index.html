@@ -81,7 +81,8 @@ body{
   user-select:none;position:relative;
 }
 .pi:hover{background:#21262d;border-color:#30363d;}
-.pi.on-field{opacity:.35;cursor:not-allowed;pointer-events:none;}
+.pi.on-field{opacity:.5;cursor:default;}
+.pi.on-field .att-chk{pointer-events:auto;cursor:pointer;}
 .pi.selected{background:#1c2e1c;border-color:#3fb950;}
 .pi.selected::before{
   content:'✓ 클릭 배치 중';position:absolute;
@@ -407,6 +408,88 @@ body{
 .mbtn-ok:hover{background:#d4731a;}
 .mbtn-cancel{background:#30363d;color:#c9d1d9;}
 .json-hint{font-size:10px;color:#484f58;background:#0d1117;padding:8px;border-radius:4px;margin-bottom:8px;font-family:monospace;white-space:pre;overflow:auto;}
+
+/* ══ ROSTER SCROLL FIX ══ */
+#p-roster{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+
+/* ══ 참석 체크박스 ══ */
+.att-chk{
+  width:18px;height:18px;min-width:18px;border:1.5px solid #30363d;border-radius:50%;
+  background:none;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:transparent;transition:all .15s;line-height:1;
+  padding:0;
+}
+.att-chk:hover{border-color:#3fb950;}
+.att-chk.on{background:#3fb950;border-color:#3fb950;color:#0d1117;font-weight:900;}
+.pi.attending{background:rgba(63,185,80,.05);}
+
+/* ══ 참석 탭 패널 ══ */
+#p-attend{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+.attend-form{padding:8px 10px;border-bottom:1px solid #30363d;display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.attend-form input{
+  padding:5px 8px;background:#21262d;border:1px solid #30363d;
+  border-radius:4px;color:#e6edf3;font-size:11px;
+}
+.attend-form input:focus{outline:none;border-color:#3fb950;}
+.attend-form input::placeholder{color:#484f58;}
+.attend-act-row{display:flex;gap:4px;}
+.attend-act-row button{
+  flex:1;padding:5px;border-radius:4px;border:1px solid #30363d;
+  background:#21262d;color:#c9d1d9;font-size:10px;cursor:pointer;
+}
+.attend-act-row button:hover{background:#30363d;}
+.abtn-save{background:#1c2e1c!important;border-color:#3fb950!important;color:#3fb950!important;font-weight:700;}
+.abtn-save:hover{background:#22361c!important;}
+.abtn-new{background:#0f3460!important;border-color:#1a4a80!important;color:#58a6ff!important;}
+
+.attend-hd{
+  display:flex;align-items:center;gap:6px;padding:5px 10px;
+  border-bottom:1px solid #21262d;flex-shrink:0;
+}
+.attend-hd>span:first-child{font-size:11px;font-weight:700;color:#c9d1d9;flex:1;}
+.attend-count{background:#1c2e1c;color:#3fb950;padding:1px 6px;border-radius:8px;font-size:10px;}
+
+.attend-player-list{flex:1;overflow-y:auto;padding:5px;}
+.attend-player-list::-webkit-scrollbar{width:3px;}
+.attend-player-list::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px;}
+
+.ap-item{
+  display:flex;align-items:center;gap:6px;padding:3px 5px;
+  border-radius:4px;margin-bottom:2px;font-size:11px;
+}
+.ap-item:hover{background:#21262d;}
+.ap-num-s{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.ap-name-s{flex:1;font-weight:600;}
+.ap-field-badge{font-size:9px;padding:1px 4px;border-radius:3px;background:#1c2e1c;color:#3fb950;}
+.ap-bench-badge{font-size:9px;padding:1px 4px;border-radius:3px;background:#21262d;color:#8b949e;}
+
+/* ══ 경기 기록 (game log) ══ */
+.gl-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 10px;border-top:1px solid #30363d;flex-shrink:0;
+}
+.gl-hd>span{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;}
+.gl-list{max-height:140px;overflow-y:auto;padding:3px 6px 4px;flex-shrink:0;}
+.gl-list::-webkit-scrollbar{width:3px;}
+.gl-list::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px;}
+.gl-item{
+  display:flex;align-items:center;gap:5px;padding:4px 5px;
+  border-radius:4px;cursor:pointer;margin-bottom:2px;border:1px solid transparent;
+}
+.gl-item:hover{background:#21262d;border-color:#30363d;}
+.gl-item.active-game{background:#0f3460;border-color:#1a4a80;}
+.gl-info{flex:1;min-width:0;}
+.gl-date{font-size:10px;color:#58a6ff;}
+.gl-opp{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gl-cnt{font-size:9px;color:#8b949e;}
+.gl-del{background:none;border:none;color:#484f58;cursor:pointer;font-size:12px;padding:0 2px;flex-shrink:0;}
+.gl-del:hover{color:#f85149;}
+.gl-empty{font-size:10px;color:#484f58;text-align:center;padding:8px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -481,6 +564,7 @@ body{
   </div>
   <div class="tab-bar">
     <button class="tab-btn active" id="t-roster" onclick="switchTab('roster')">선수 명단</button>
+    <button class="tab-btn"        id="t-attend" onclick="switchTab('attend')">참석</button>
     <button class="tab-btn"        id="t-add"    onclick="switchTab('add')">➕ 추가</button>
   </div>
 
@@ -513,6 +597,31 @@ body{
     </div>
     <div class="player-list" id="player-list">
       <div class="empty-state">선수를 추가하거나<br>JSON으로 가져오세요</div>
+    </div>
+  </div>
+
+  <!-- 참석 패널 -->
+  <div id="p-attend" style="display:none;">
+    <div class="attend-form">
+      <input type="text" id="at-date"  placeholder="날짜 (예: 2026.07.06)">
+      <input type="text" id="at-opp"   placeholder="상대팀">
+      <input type="text" id="at-venue" placeholder="구장">
+      <div class="attend-act-row">
+        <button class="abtn-save" onclick="saveCurrentGame()">💾 저장</button>
+        <button class="abtn-new"  onclick="newGame()">+ 새 경기</button>
+        <button                   onclick="clearAttendees()">초기화</button>
+      </div>
+    </div>
+    <div class="attend-hd">
+      <span>참석 인원</span>
+      <span class="attend-count" id="attend-count">0명</span>
+    </div>
+    <div class="attend-player-list" id="attend-player-list">
+      <div class="gl-empty">선수명단에서 ○를 클릭하면<br>참석 선수로 표시됩니다</div>
+    </div>
+    <div class="gl-hd"><span>경기 기록</span></div>
+    <div class="gl-list" id="gl-list">
+      <div class="gl-empty">저장된 경기가 없습니다</div>
     </div>
   </div>
 
@@ -663,6 +772,15 @@ body{
           <div id="gp-cards"></div>
         </div>
 
+        <!-- 후보 선수 -->
+        <div class="gp-sec">
+          <div class="gp-sec-hd">
+            <span>⬜ 후보선수</span>
+            <span id="gp-bench-cnt" style="font-size:9px;color:#8b949e;"></span>
+          </div>
+          <div id="gp-bench"><div class="gp-empty">참석 체크된 후보 없음</div></div>
+        </div>
+
         <!-- 초기화 -->
         <div class="gp-reset-row">
           <button class="gp-reset-btn" onclick="resetEvents()">경기 기록 초기화</button>
@@ -747,6 +865,10 @@ let matchInfo    = JSON.parse(localStorage.getItem('dasinfc_match')  || JSON.str
 let matchEvents  = JSON.parse(localStorage.getItem('dasinfc_events') || JSON.stringify({
   scoreHome:0, scoreAway:0, goals:[], subs:[], cards:[]
 }));
+let currentAttendees = new Set(JSON.parse(localStorage.getItem('dasinfc_attendees') || '[]'));
+let gameLog          = JSON.parse(localStorage.getItem('dasinfc_game_log') || '[]');
+let currentGameId    = localStorage.getItem('dasinfc_current_game_id') || null;
+let currentGameInfo  = JSON.parse(localStorage.getItem('dasinfc_current_game_info') || 'null') || {date:'',opp:'',venue:''};
 let pitchView = localStorage.getItem('dasinfc_view') || 'full';
 
 // 기본 명단 로드 — 버전이 바뀌었거나 데이터가 없으면 리셋
@@ -789,6 +911,7 @@ function render() {
   renderPitch();
   renderSubs();
   renderGamePanel();
+  if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
   save();
 }
 
@@ -825,12 +948,14 @@ function renderRoster() {
     const sel = selectedForPlace && selectedForPlace.id===p.id;
     const c   = POS_COLOR[p.pos]||'#888';
     const ac  = AGE_CLASS[p.age]||'';
+    const isAtt = currentAttendees.has(p.id);
     const birthLabel = p.birth ? `<span class="ptag" style="color:#6e7681;">${p.birth.replace(/-/g,'.')}</span>` : '';
-    return `<div class="pi ${onField?'on-field':''} ${sel?'selected':''}"
+    return `<div class="pi ${onField?'on-field':''} ${sel?'selected':''} ${isAtt?'attending':''}"
       draggable="${!onField}"
       ondragstart="onRosterDrag(event,'${p.id}')"
       onclick="clickSelect(event,'${p.id}')"
       data-id="${p.id}">
+      <button class="att-chk ${isAtt?'on':''}" onclick="toggleAttend(event,'${p.id}')">✓</button>
       <div class="pnum" style="background:${c}">${p.no}</div>
       <div class="pmeta">
         <div class="n" onclick="toggleDelBtn(event,'${p.id}')">${p.name}</div>
@@ -1040,7 +1165,7 @@ document.addEventListener('click',()=>{
 
 function clickSelect(e,id){
   e.stopPropagation();
-  if(e.target.closest('.dbtn')||e.target.closest('.n'))return;
+  if(e.target.closest('.dbtn')||e.target.closest('.n')||e.target.closest('.att-chk'))return;
   const p=players.find(p=>p.id===id);
   if(!p||fieldPlayers.some(f=>f.id===p.id))return;
   if(selectedForPlace&&selectedForPlace.id===id){clearSelection();}
@@ -1267,11 +1392,18 @@ function saveImage(){
 // UI HELPERS
 // ══════════════════
 function switchTab(tab){
-  document.getElementById('t-roster').classList.toggle('active',tab==='roster');
-  document.getElementById('t-add').classList.toggle('active',tab==='add');
+  ['roster','attend','add'].forEach(t=>{
+    const btn=document.getElementById('t-'+t);
+    if(btn)btn.classList.toggle('active',t===tab);
+  });
   document.getElementById('p-roster').style.display=tab==='roster'?'flex':'none';
+  document.getElementById('p-attend').style.display=tab==='attend'?'flex':'none';
   document.getElementById('p-add').style.display=tab==='add'?'block':'none';
-  if(tab==='roster')document.getElementById('p-roster').style.flexDirection='column';
+  if(tab==='roster'){document.getElementById('p-roster').style.flexDirection='column';}
+  if(tab==='attend'){
+    document.getElementById('p-attend').style.flexDirection='column';
+    renderAttendTab();
+  }
 }
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -1348,6 +1480,29 @@ function renderGamePanel(){
         </div>`;
       }).join('')
     :'<div class="gp-empty">없음</div>';
+
+  // 후보 선수 (참석O, 선발X)
+  const benchEl=document.getElementById('gp-bench');
+  const benchCntEl=document.getElementById('gp-bench-cnt');
+  if(benchEl){
+    const fieldIds=new Set(fieldPlayers.map(f=>f.id));
+    const bench=players.filter(p=>currentAttendees.has(p.id)&&!fieldIds.has(p.id))
+      .sort((a,b)=>a.no-b.no);
+    if(benchCntEl)benchCntEl.textContent=bench.length?`${bench.length}명`:'';
+    benchEl.innerHTML=bench.length
+      ?bench.map(p=>{
+          const c=POS_COLOR[p.pos]||'#888';
+          const ac=AGE_CLASS[p.age]||'';
+          return `<div class="gp-event">
+            <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:${c};
+              display:flex;align-items:center;justify-content:center;
+              font-size:10px;font-weight:700;color:#fff;">${p.no}</div>
+            <span class="gp-name">${p.name}</span>
+            ${p.age?`<span class="ptag ${ac}" style="font-size:9px;">${p.age}</span>`:''}
+          </div>`;
+        }).join('')
+      :'<div class="gp-empty">참석 체크된 후보 없음</div>';
+  }
 }
 
 function updateScore(){
@@ -1419,6 +1574,155 @@ function resetEvents(){
 
 function saveEvents(){
   localStorage.setItem('dasinfc_events',JSON.stringify(matchEvents));
+}
+
+// ══════════════════
+// ATTENDANCE
+// ══════════════════
+function toggleAttend(e,id){
+  e.stopPropagation();
+  if(currentAttendees.has(id))currentAttendees.delete(id);
+  else currentAttendees.add(id);
+  saveAttendees();
+  renderRoster();
+  renderGamePanel();
+  if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
+}
+
+function saveAttendees(){
+  localStorage.setItem('dasinfc_attendees',JSON.stringify([...currentAttendees]));
+}
+
+function renderAttendTab(){
+  // 입력 필드 동기화 (포커스 중인 필드는 건드리지 않음)
+  const dateEl=document.getElementById('at-date');
+  const oppEl=document.getElementById('at-opp');
+  const venueEl=document.getElementById('at-venue');
+  if(dateEl&&!dateEl.matches(':focus'))dateEl.value=currentGameInfo.date||'';
+  if(oppEl&&!oppEl.matches(':focus'))oppEl.value=currentGameInfo.opp||'';
+  if(venueEl&&!venueEl.matches(':focus'))venueEl.value=currentGameInfo.venue||'';
+
+  const fieldIds=new Set(fieldPlayers.map(f=>f.id));
+  const attending=players.filter(p=>currentAttendees.has(p.id)).sort((a,b)=>a.no-b.no);
+  const starters=attending.filter(p=>fieldIds.has(p.id));
+  const bench=attending.filter(p=>!fieldIds.has(p.id));
+
+  const cntEl=document.getElementById('attend-count');
+  if(cntEl)cntEl.textContent=`${attending.length}명 (선발 ${starters.length} / 후보 ${bench.length})`;
+
+  const listEl=document.getElementById('attend-player-list');
+  if(!listEl)return;
+  if(!attending.length){
+    listEl.innerHTML='<div class="gl-empty">선수명단에서 ○를 클릭하면<br>참석 선수로 표시됩니다</div>';
+  }else{
+    listEl.innerHTML=attending.map(p=>{
+      const c=POS_COLOR[p.pos]||'#888';
+      const ac=AGE_CLASS[p.age]||'';
+      const onField=fieldIds.has(p.id);
+      return `<div class="ap-item">
+        <div class="ap-num-s" style="background:${c}">${p.no}</div>
+        <span class="ap-name-s">${p.name}</span>
+        ${p.age?`<span class="ptag ${ac}" style="font-size:9px;">${p.age}</span>`:''}
+        ${onField?'<span class="ap-field-badge">선발</span>':'<span class="ap-bench-badge">후보</span>'}
+      </div>`;
+    }).join('');
+  }
+
+  renderGameLog();
+}
+
+function renderGameLog(){
+  const el=document.getElementById('gl-list');
+  if(!el)return;
+  if(!gameLog.length){
+    el.innerHTML='<div class="gl-empty">저장된 경기 기록이 없습니다</div>';
+    return;
+  }
+  el.innerHTML=[...gameLog].reverse().map(g=>{
+    const active=g.id===currentGameId;
+    const cnt=g.attendees?g.attendees.length:0;
+    return `<div class="gl-item ${active?'active-game':''}" onclick="loadGame('${g.id}')">
+      <div class="gl-info">
+        <div class="gl-date">${g.date||'날짜 미입력'}${g.venue?' | '+g.venue:''}</div>
+        <div class="gl-opp">vs ${g.opp||'상대팀'}</div>
+        <div class="gl-cnt">참석 ${cnt}명</div>
+      </div>
+      <button class="gl-del" onclick="deleteGame(event,'${g.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+function saveCurrentGame(){
+  const date=(document.getElementById('at-date').value||'').trim();
+  const opp=(document.getElementById('at-opp').value||'').trim();
+  const venue=(document.getElementById('at-venue').value||'').trim();
+  currentGameInfo={date,opp,venue};
+
+  const fieldIds=new Set(fieldPlayers.map(f=>f.id));
+  const attendeeArr=[...currentAttendees];
+  const starters=attendeeArr.filter(id=>fieldIds.has(id)).length;
+
+  if(currentGameId){
+    const idx=gameLog.findIndex(g=>g.id===currentGameId);
+    if(idx!==-1)gameLog[idx]={...gameLog[idx],date,opp,venue,attendees:attendeeArr,starters};
+  }else{
+    currentGameId=uid();
+    localStorage.setItem('dasinfc_current_game_id',currentGameId);
+    gameLog.push({id:currentGameId,date,opp,venue,attendees:attendeeArr,starters,createdAt:Date.now()});
+  }
+
+  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
+  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  renderGameLog();
+  alert('✅ 경기 기록 저장 완료!');
+}
+
+function newGame(){
+  if(!confirm('새 경기를 시작합니다.\n현재 참석 인원이 초기화됩니다.'))return;
+  currentGameId=null;
+  currentAttendees.clear();
+  currentGameInfo={date:'',opp:'',venue:''};
+  localStorage.removeItem('dasinfc_current_game_id');
+  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  saveAttendees();
+  renderRoster();
+  renderGamePanel();
+  renderAttendTab();
+}
+
+function loadGame(id){
+  const g=gameLog.find(x=>x.id===id);
+  if(!g)return;
+  currentGameId=id;
+  currentGameInfo={date:g.date||'',opp:g.opp||'',venue:g.venue||''};
+  currentAttendees=new Set(g.attendees||[]);
+  localStorage.setItem('dasinfc_current_game_id',id);
+  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  saveAttendees();
+  renderRoster();
+  renderGamePanel();
+  renderAttendTab();
+}
+
+function deleteGame(e,id){
+  e.stopPropagation();
+  if(!confirm('이 경기 기록을 삭제하시겠습니까?'))return;
+  gameLog=gameLog.filter(g=>g.id!==id);
+  if(currentGameId===id){
+    currentGameId=null;
+    localStorage.removeItem('dasinfc_current_game_id');
+  }
+  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
+  renderGameLog();
+}
+
+function clearAttendees(){
+  if(!confirm('참석 인원을 초기화하시겠습니까?'))return;
+  currentAttendees.clear();
+  saveAttendees();
+  renderRoster();
+  renderGamePanel();
+  renderAttendTab();
 }
 
 // ══════════════════

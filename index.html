@@ -493,6 +493,36 @@ body{
 .gp-bench-item{cursor:grab;user-select:none;border-radius:3px;padding:3px 2px;margin:0 -2px;}
 .gp-bench-item:hover{background:#21262d;}
 .gp-bench-item:active{cursor:grabbing;}
+
+/* ══ ANNOTATION CANVAS ══ */
+#pitch{touch-action:none;}
+#pitch-clip{touch-action:none;}
+#annotation-canvas{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;z-index:8;touch-action:none;
+}
+#annotation-canvas.draw-active{
+  pointer-events:auto;z-index:15;cursor:crosshair;
+}
+
+/* ══ DRAW TOOLBAR ══ */
+#draw-ctrl{
+  display:none;align-items:center;gap:5px;padding:5px 14px;
+  background:#0d1117;border-bottom:1px solid #30363d;flex-wrap:wrap;flex-shrink:0;
+}
+#draw-ctrl.show{display:flex;}
+.dc{
+  width:18px;height:18px;min-width:18px;border-radius:50%;
+  border:2px solid transparent;cursor:pointer;transition:all .15s;padding:0;flex-shrink:0;
+}
+.dc.on,.dc:hover{border-color:#fff !important;transform:scale(1.25);}
+.ds{
+  padding:3px 7px;border-radius:4px;border:1px solid #30363d;
+  background:#21262d;color:#8b949e;cursor:pointer;font-size:10px;transition:all .15s;
+}
+.ds.on{background:#f0883e;border-color:#f0883e;color:#0d1117;font-weight:700;}
+.draw-sep{width:1px;height:16px;background:#30363d;margin:0 2px;flex-shrink:0;}
+#draw-eraser-btn.on{background:#58a6ff !important;border-color:#58a6ff !important;color:#0d1117 !important;}
 </style>
 </head>
 <body>
@@ -680,6 +710,7 @@ body{
       <button class="cbtn" onclick="clearPitch()">⬜ 비우기</button>
       <button class="cbtn" id="pos-guide-btn" onclick="togglePositionGuide()">📍 포지션</button>
       <button class="cbtn" onclick="saveImage()">📸 이미지</button>
+      <button class="cbtn" id="annot-btn" onclick="toggleDrawMode()">✏️ 필기</button>
       <div class="ctrl-sep"></div>
       <div class="vtbar">
         <button class="vtbtn active" id="vt-full" onclick="setPitchView('full')">전체</button>
@@ -688,6 +719,25 @@ body{
       </div>
       <span id="ctrl-hint">🟢 작전판 클릭으로 배치</span>
     </div>
+
+    <!-- 필기 도구 바 -->
+    <div id="draw-ctrl">
+      <button class="dc on" data-c="#f85149" style="background:#f85149" onclick="setDrawColor('#f85149')"></button>
+      <button class="dc"    data-c="#ffd700" style="background:#ffd700" onclick="setDrawColor('#ffd700')"></button>
+      <button class="dc"    data-c="#58a6ff" style="background:#58a6ff" onclick="setDrawColor('#58a6ff')"></button>
+      <button class="dc"    data-c="#3fb950" style="background:#3fb950" onclick="setDrawColor('#3fb950')"></button>
+      <button class="dc"    data-c="#f0883e" style="background:#f0883e" onclick="setDrawColor('#f0883e')"></button>
+      <button class="dc"    data-c="#ffffff" style="background:#fff;border-color:#555 !important;" onclick="setDrawColor('#ffffff')"></button>
+      <div class="draw-sep"></div>
+      <button class="ds on" data-s="2" onclick="setDrawSize(2)">가는</button>
+      <button class="ds"    data-s="4" onclick="setDrawSize(4)">중간</button>
+      <button class="ds"    data-s="7" onclick="setDrawSize(7)">굵은</button>
+      <div class="draw-sep"></div>
+      <button class="cbtn" id="draw-eraser-btn" onclick="toggleEraser()">지우개</button>
+      <button class="cbtn" onclick="undoAnnotation()">↩ 실행취소</button>
+      <button class="cbtn" onclick="clearAnnotation()">🗑️ 전체 삭제</button>
+    </div>
+
     <div id="pw">
       <div id="pitch-clip" style="flex-shrink:0;">
         <div id="pitch">
@@ -698,6 +748,7 @@ body{
           <div class="pm ca ca-tl"></div><div class="pm ca ca-tr"></div>
           <div class="pm ca ca-bl"></div><div class="pm ca ca-br"></div>
           <div class="pm atk">▲ 공격 방향</div>
+          <canvas id="annotation-canvas" width="400" height="552"></canvas>
         </div>
       </div>
 
@@ -890,6 +941,13 @@ let subsOpen      = false;
 let dragSrc       = null;
 let selectedForPlace = null;
 let positionGuide = false;
+let annotationMode = false;
+let drawColor  = '#f85149';
+let drawSize   = 2;
+let eraserMode = false;
+let annotDrawing = false;
+let annotLastX = 0, annotLastY = 0;
+let annotHistory = [];
 
 // [이름, x%, y%]  — 공격 위쪽(y작음), 수비 아래쪽(y큼)
 const POS_SPOTS=[
@@ -1025,6 +1083,52 @@ function renderPitch() {
       <div class="fp-n">${fp.name}</div>`;
     el.draggable=true;
     el.addEventListener('dragstart',e=>onFieldDrag(e,idx));
+
+    // 터치 / 애플펜슬 드래그 (포인터 이벤트)
+    el.addEventListener('pointerdown', e=>{
+      if(annotationMode) return;
+      if(e.pointerType === 'mouse') return; // 마우스는 HTML5 drag 사용
+      if(e.target.closest('.fp-x')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      el.setPointerCapture(e.pointerId);
+      el.style.zIndex = '100';
+
+      const onMove = ev=>{
+        ev.preventDefault();
+        const pr = pitch.getBoundingClientRect();
+        let x = Math.max(4, Math.min(96, ((ev.clientX - pr.left) / pr.width)  * 100));
+        let y = Math.max(4, Math.min(96, ((ev.clientY - pr.top)  / pr.height) * 100));
+        el.style.left = x+'%';
+        el.style.top  = y+'%';
+        fieldPlayers[idx].x = x;
+        fieldPlayers[idx].y = y;
+        if(positionGuide){
+          const snap = findNearestSpot(x, y);
+          document.querySelectorAll('.pos-spot').forEach(s=>{
+            const sx=parseFloat(s.dataset.x), sy=parseFloat(s.dataset.y);
+            s.classList.toggle('snap-hi', !!snap && snap.x===sx && snap.y===sy);
+          });
+        }
+      };
+
+      const onUp = ()=>{
+        el.style.zIndex = '';
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerup',   onUp);
+        if(positionGuide){
+          const snap = findNearestSpot(fieldPlayers[idx].x, fieldPlayers[idx].y);
+          if(snap){ fieldPlayers[idx].x=snap.x; fieldPlayers[idx].y=snap.y; }
+          document.querySelectorAll('.pos-spot.snap-hi').forEach(s=>s.classList.remove('snap-hi'));
+        }
+        save();
+        renderPitch();
+      };
+
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerup',   onUp);
+    });
+
     pitch.appendChild(el);
   });
   renderPositionSpots();
@@ -1189,6 +1293,14 @@ function clearSelection(){
 }
 pitchClip.addEventListener('click',e=>{
   if(!selectedForPlace||e.target.closest('.fp'))return;
+  if(annotationMode)return;
+  placeOnPitch(pitchCoords(e));
+});
+
+// 터치/펜으로 선수 배치 (pointerup on pitch when selectedForPlace)
+pitchClip.addEventListener('pointerup', e=>{
+  if(!selectedForPlace || e.pointerType==='mouse' || annotationMode) return;
+  if(e.target.closest('.fp') || e.target.closest('.fp-x')) return;
   placeOnPitch(pitchCoords(e));
 });
 
@@ -1421,6 +1533,106 @@ document.addEventListener('keydown',e=>{
 });
 
 // ══════════════════
+// ANNOTATION (필기)
+// ══════════════════
+const annotCanvas = document.getElementById('annotation-canvas');
+const annotCtx    = annotCanvas.getContext('2d');
+
+function toggleDrawMode(){
+  annotationMode = !annotationMode;
+  eraserMode = false;
+  document.getElementById('draw-eraser-btn').classList.remove('on');
+  annotCanvas.classList.toggle('draw-active', annotationMode);
+  document.getElementById('draw-ctrl').classList.toggle('show', annotationMode);
+  document.getElementById('annot-btn').classList.toggle('pri', annotationMode);
+}
+
+function setDrawColor(c){
+  drawColor = c;
+  eraserMode = false;
+  document.getElementById('draw-eraser-btn').classList.remove('on');
+  document.querySelectorAll('.dc').forEach(b=>b.classList.toggle('on', b.dataset.c===c));
+}
+
+function setDrawSize(s){
+  drawSize = parseInt(s);
+  document.querySelectorAll('.ds').forEach(b=>b.classList.toggle('on', b.dataset.s==s));
+}
+
+function toggleEraser(){
+  eraserMode = !eraserMode;
+  document.getElementById('draw-eraser-btn').classList.toggle('on', eraserMode);
+}
+
+function undoAnnotation(){
+  if(!annotHistory.length)return;
+  annotCtx.putImageData(annotHistory.pop(), 0, 0);
+}
+
+function clearAnnotation(){
+  annotHistory = [];
+  annotCtx.clearRect(0, 0, annotCanvas.width, annotCanvas.height);
+}
+
+function _annotSaveHistory(){
+  if(annotHistory.length >= 20) annotHistory.shift();
+  annotHistory.push(annotCtx.getImageData(0, 0, annotCanvas.width, annotCanvas.height));
+}
+
+annotCanvas.addEventListener('pointerdown', e=>{
+  if(!annotationMode)return;
+  e.preventDefault();
+  annotCanvas.setPointerCapture(e.pointerId);
+  _annotSaveHistory();
+  annotDrawing = true;
+  const r = annotCanvas.getBoundingClientRect();
+  const sx = annotCanvas.width  / r.width;
+  const sy = annotCanvas.height / r.height;
+  annotLastX = (e.clientX - r.left) * sx;
+  annotLastY = (e.clientY - r.top)  * sy;
+  // 점 찍기 (단순 탭)
+  annotCtx.globalCompositeOperation = eraserMode ? 'destination-out' : 'source-over';
+  annotCtx.beginPath();
+  annotCtx.arc(annotLastX, annotLastY, (eraserMode ? drawSize*3 : drawSize) / 2, 0, Math.PI*2);
+  annotCtx.fillStyle = eraserMode ? 'rgba(0,0,0,1)' : drawColor;
+  annotCtx.fill();
+});
+
+annotCanvas.addEventListener('pointermove', e=>{
+  if(!annotDrawing || !annotationMode)return;
+  e.preventDefault();
+  const r  = annotCanvas.getBoundingClientRect();
+  const sx = annotCanvas.width  / r.width;
+  const sy = annotCanvas.height / r.height;
+  const x  = (e.clientX - r.left) * sx;
+  const y  = (e.clientY - r.top)  * sy;
+  const pressure = (e.pressure > 0 && e.pressure <= 1) ? e.pressure : 0.5;
+
+  annotCtx.beginPath();
+  annotCtx.moveTo(annotLastX, annotLastY);
+  annotCtx.lineTo(x, y);
+  annotCtx.lineCap  = 'round';
+  annotCtx.lineJoin = 'round';
+
+  if(eraserMode){
+    annotCtx.globalCompositeOperation = 'destination-out';
+    annotCtx.lineWidth   = drawSize * 6;
+    annotCtx.strokeStyle = 'rgba(0,0,0,1)';
+  } else {
+    annotCtx.globalCompositeOperation = 'source-over';
+    annotCtx.lineWidth   = Math.max(1, drawSize * (0.5 + pressure * 1.0));
+    annotCtx.strokeStyle = drawColor;
+  }
+  annotCtx.stroke();
+
+  annotLastX = x;
+  annotLastY = y;
+});
+
+annotCanvas.addEventListener('pointerup',     ()=>{ annotDrawing = false; });
+annotCanvas.addEventListener('pointercancel', ()=>{ annotDrawing = false; });
+
+// ══════════════════
 // GAME PANEL
 // ══════════════════
 function playerOpts(selId=''){
@@ -1499,7 +1711,8 @@ function renderGamePanel(){
           const ac=AGE_CLASS[p.age]||'';
           return `<div class="gp-event gp-bench-item"
             draggable="true"
-            ondragstart="onRosterDrag(event,'${p.id}')">
+            ondragstart="onRosterDrag(event,'${p.id}')"
+            onclick="clickSelect(event,'${p.id}')">
             <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:${c};
               display:flex;align-items:center;justify-content:center;
               font-size:10px;font-weight:700;color:#fff;">${p.no}</div>

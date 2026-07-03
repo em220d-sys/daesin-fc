@@ -490,6 +490,9 @@ body{
 .gl-del{background:none;border:none;color:#484f58;cursor:pointer;font-size:12px;padding:0 2px;flex-shrink:0;}
 .gl-del:hover{color:#f85149;}
 .gl-empty{font-size:10px;color:#484f58;text-align:center;padding:8px;line-height:1.6;}
+.gp-bench-item{cursor:grab;user-select:none;border-radius:3px;padding:3px 2px;margin:0 -2px;}
+.gp-bench-item:hover{background:#21262d;}
+.gp-bench-item:active{cursor:grabbing;}
 </style>
 </head>
 <body>
@@ -778,6 +781,7 @@ body{
             <span>⬜ 후보선수</span>
             <span id="gp-bench-cnt" style="font-size:9px;color:#8b949e;"></span>
           </div>
+          <div style="font-size:9px;color:#484f58;margin-bottom:4px;">드래그하여 작전판 배치</div>
           <div id="gp-bench"><div class="gp-empty">참석 체크된 후보 없음</div></div>
         </div>
 
@@ -1493,7 +1497,9 @@ function renderGamePanel(){
       ?bench.map(p=>{
           const c=POS_COLOR[p.pos]||'#888';
           const ac=AGE_CLASS[p.age]||'';
-          return `<div class="gp-event">
+          return `<div class="gp-event gp-bench-item"
+            draggable="true"
+            ondragstart="onRosterDrag(event,'${p.id}')">
             <div style="width:22px;height:22px;min-width:22px;border-radius:50%;background:${c};
               display:flex;align-items:center;justify-content:center;
               font-size:10px;font-weight:700;color:#fff;">${p.no}</div>

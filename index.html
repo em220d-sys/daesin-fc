@@ -403,10 +403,31 @@ body{
 .mbox textarea{height:150px;font-family:monospace;resize:vertical;}
 .mbox input:focus,.mbox textarea:focus{outline:none;border-color:#f0883e;}
 .mbtns{display:flex;gap:8px;margin-top:4px;}
-.mbtns button{flex:1;padding:8px;border-radius:4px;border:none;cursor:pointer;font-size:13px;}
+.mbtns button,.mbtns a{flex:1;padding:8px;border-radius:4px;border:none;cursor:pointer;font-size:13px;text-align:center;text-decoration:none;display:block;}
 .mbtn-ok{background:#f0883e;color:#0d1117;font-weight:700;}
 .mbtn-ok:hover{background:#d4731a;}
 .mbtn-cancel{background:#30363d;color:#c9d1d9;}
+/* 경기 기록 모달 */
+.mm-player-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 7px 2px 3px;border-radius:10px;font-size:10px;
+  border:1px solid #30363d;background:#21262d;
+}
+.mm-player-chip.on-field{background:#1c2e1c;border-color:#3fb950;}
+.mm-chip-num{
+  width:16px;height:16px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.mm-attend-box{
+  background:#0d1117;border-radius:6px;padding:9px 11px;
+  margin:4px 0 10px;
+}
+.mm-attend-box-hd{font-size:11px;color:#8b949e;margin-bottom:6px;}
+.mm-chips{display:flex;flex-wrap:wrap;gap:3px;max-height:88px;overflow-y:auto;}
+.mm-chips::-webkit-scrollbar{height:3px;width:3px;}
+.mm-chips::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px;}
+.mm-status{font-size:11px;padding:3px 0 6px;display:flex;align-items:center;justify-content:space-between;}
 .json-hint{font-size:10px;color:#484f58;background:#0d1117;padding:8px;border-radius:4px;margin-bottom:8px;font-family:monospace;white-space:pre;overflow:auto;}
 
 /* ══ ROSTER SCROLL FIX ══ */
@@ -589,17 +610,43 @@ body{
   </div>
 </div>
 
+<!-- 모달: 경기 기록 저장/편집 -->
+<div class="mbg" id="mMatch">
+  <div class="mbox">
+    <h3>📋 경기 기록</h3>
+    <div class="mm-status">
+      <span id="mm-status-txt" style="color:#8b949e;font-size:11px;">새 경기 기록</span>
+      <button onclick="newGameFromModal()" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid #30363d;background:none;color:#8b949e;cursor:pointer;">+ 새 경기</button>
+    </div>
+    <label style="font-size:11px;color:#8b949e;margin-bottom:2px;display:block;">날짜</label>
+    <input type="text" id="mm-date" placeholder="2026.07.06">
+    <label style="font-size:11px;color:#8b949e;margin-bottom:2px;display:block;">상대팀</label>
+    <input type="text" id="mm-opp"  placeholder="상대팀">
+    <label style="font-size:11px;color:#8b949e;margin-bottom:2px;display:block;">구장</label>
+    <input type="text" id="mm-venue" placeholder="구장">
+    <div class="mm-attend-box">
+      <div class="mm-attend-box-hd">참석 인원 &nbsp;<span id="mm-cnt" style="color:#3fb950;font-weight:700;">0명</span></div>
+      <div class="mm-chips" id="mm-chips"></div>
+    </div>
+    <div class="mbtns">
+      <button class="mbtn-cancel" onclick="closeModal('mMatch')">닫기</button>
+      <a class="mbtn-cancel" href="matches.html">📋 전체 기록</a>
+      <button class="mbtn-ok" id="mm-save-btn" onclick="saveMatchModal()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SIDEBAR ══ -->
 <div id="sidebar">
   <div class="sb-head">
     <span>⚽</span><h2>대신FC 선수단</h2>
     <span class="field-count" id="field-count">0/11</span>
-    <a href="matches.html" style="
-      margin-left:4px;padding:2px 7px;border-radius:4px;
+    <button onclick="openMatchModal()" style="
+      margin-left:4px;padding:2px 8px;border-radius:4px;
       border:1px solid #30363d;background:#21262d;
-      color:#8b949e;font-size:10px;text-decoration:none;
+      color:#8b949e;font-size:10px;cursor:pointer;
       white-space:nowrap;transition:all .15s;flex-shrink:0;
-    " onmouseover="this.style.background='#30363d'" onmouseout="this.style.background='#21262d'">📋 경기</a>
+    " onmouseover="this.style.background='#30363d'" onmouseout="this.style.background='#21262d'">📋 경기</button>
   </div>
   <div class="tab-bar">
     <button class="tab-btn active" id="t-roster" onclick="switchTab('roster')">선수 명단</button>
@@ -1948,6 +1995,104 @@ function clearAttendees(){
   renderRoster();
   renderGamePanel();
   renderAttendTab();
+}
+
+// ══════════════════
+// 경기 기록 모달
+// ══════════════════
+function openMatchModal(){
+  // 폼 채우기
+  document.getElementById('mm-date').value  = currentGameInfo.date  || '';
+  document.getElementById('mm-opp').value   = currentGameInfo.opp   || '';
+  document.getElementById('mm-venue').value = currentGameInfo.venue || '';
+
+  // 상태 표시
+  const stEl = document.getElementById('mm-status-txt');
+  if(currentGameId){
+    const g = gameLog.find(x=>x.id===currentGameId);
+    stEl.textContent = `수정 중: ${g?.date||'날짜 미입력'} vs ${g?.opp||'상대팀'}`;
+    stEl.style.color = '#58a6ff';
+  } else {
+    stEl.textContent = '새 경기 기록';
+    stEl.style.color = '#8b949e';
+  }
+
+  // 참석 선수 칩
+  const attending = players.filter(p=>currentAttendees.has(p.id)).sort((a,b)=>a.no-b.no);
+  const fieldIds  = new Set(fieldPlayers.map(f=>f.id));
+  const starters  = attending.filter(p=>fieldIds.has(p.id)).length;
+  const bench     = attending.length - starters;
+
+  document.getElementById('mm-cnt').textContent =
+    attending.length
+      ? `${attending.length}명  (선발 ${starters} / 후보 ${bench})`
+      : '0명 — 선수명단에서 ○를 체크하세요';
+
+  document.getElementById('mm-chips').innerHTML = attending.map(p=>{
+    const c  = POS_COLOR[p.pos]||'#888';
+    const ac = AGE_CLASS[p.age]||'';
+    const onField = fieldIds.has(p.id);
+    return `<span class="mm-player-chip ${onField?'on-field':''}">
+      <span class="mm-chip-num" style="background:${c}">${p.no}</span>
+      ${p.name}
+    </span>`;
+  }).join('') || '<span style="font-size:10px;color:#484f58;">없음</span>';
+
+  openModal('mMatch');
+}
+
+function saveMatchModal(){
+  const date  = document.getElementById('mm-date').value.trim();
+  const opp   = document.getElementById('mm-opp').value.trim();
+  const venue = document.getElementById('mm-venue').value.trim();
+  currentGameInfo = {date, opp, venue};
+
+  // 참석 탭 입력창도 동기화
+  const dateEl=document.getElementById('at-date'); if(dateEl)dateEl.value=date;
+  const oppEl =document.getElementById('at-opp');  if(oppEl) oppEl.value=opp;
+  const venEl =document.getElementById('at-venue');if(venEl) venEl.value=venue;
+
+  const fieldIds    = new Set(fieldPlayers.map(f=>f.id));
+  const attendeeArr = [...currentAttendees];
+  const starters    = attendeeArr.filter(id=>fieldIds.has(id)).length;
+
+  if(currentGameId){
+    const idx=gameLog.findIndex(g=>g.id===currentGameId);
+    if(idx!==-1)gameLog[idx]={...gameLog[idx],date,opp,venue,attendees:attendeeArr,starters};
+  }else{
+    currentGameId=uid();
+    localStorage.setItem('dasinfc_current_game_id',currentGameId);
+    gameLog.push({id:currentGameId,date,opp,venue,attendees:attendeeArr,starters,createdAt:Date.now()});
+  }
+  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
+  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
+
+  // 저장 완료 피드백
+  const btn=document.getElementById('mm-save-btn');
+  const org=btn.textContent;
+  btn.textContent='✅ 저장됨!';
+  btn.style.background='#3fb950';
+  setTimeout(()=>{btn.textContent=org;btn.style.background='';},1500);
+
+  // 상태 업데이트
+  const stEl=document.getElementById('mm-status-txt');
+  const g=gameLog.find(x=>x.id===currentGameId);
+  stEl.textContent=`수정 중: ${g?.date||'날짜 미입력'} vs ${g?.opp||'상대팀'}`;
+  stEl.style.color='#58a6ff';
+}
+
+function newGameFromModal(){
+  if(!confirm('새 경기를 시작합니다.\n현재 참석 인원이 초기화됩니다.'))return;
+  currentGameId=null;
+  currentAttendees.clear();
+  currentGameInfo={date:'',opp:'',venue:''};
+  localStorage.removeItem('dasinfc_current_game_id');
+  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  saveAttendees();
+  closeModal('mMatch');
+  renderRoster();renderGamePanel();
+  if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
 }
 
 // ══════════════════

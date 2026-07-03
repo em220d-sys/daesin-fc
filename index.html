@@ -6,10 +6,15 @@
 <title>대신FC — 스타팅 XI 메이커</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--pitch-w:400px;--pitch-h:552px;}
 body{
   font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
   background:#0d1117;color:#e6edf3;height:100vh;display:flex;overflow:hidden;
 }
+
+/* ══ 모바일: 사이드바 토글 버튼 / 오버레이 ══ */
+#sidebar-toggle-btn{display:none;}
+#sidebar-backdrop{display:none;}
 
 /* ══ SIDEBAR ══ */
 #sidebar{
@@ -294,16 +299,16 @@ body{
 }
 .gp-reset-btn:hover{background:#21262d;color:#8b949e;}
 #pitch-clip{
-  overflow:hidden;width:400px;height:552px;flex-shrink:0;
+  overflow:hidden;width:var(--pitch-w);height:var(--pitch-h);flex-shrink:0;
   transition:height .35s cubic-bezier(.4,0,.2,1);position:relative;
 }
-#pitch-clip.half{height:277px;}
+#pitch-clip.half{height:calc(var(--pitch-h) / 2);}
 #pitch-clip.half::after{
   content:'';position:absolute;top:0;left:0;right:0;height:2.5px;
   background:rgba(255,255,255,.8);pointer-events:none;z-index:20;
 }
 #pitch{
-  position:relative;width:400px;height:552px;flex-shrink:0;
+  position:relative;width:var(--pitch-w);height:var(--pitch-h);flex-shrink:0;
   background-color:#2e7d32;
   background-image:repeating-linear-gradient(
     180deg,transparent 0px,transparent 46px,rgba(0,0,0,.09) 46px,rgba(0,0,0,.09) 92px
@@ -311,7 +316,7 @@ body{
   border:2.5px solid rgba(255,255,255,.9);border-radius:2px;cursor:crosshair;
   transition:transform .35s cubic-bezier(.4,0,.2,1),box-shadow .2s;
 }
-#pitch.shift-up{transform:translateY(-275px);}
+#pitch.shift-up{transform:translateY(-50%);}
 #pitch.drag-over{box-shadow:inset 0 0 0 3px #f0883e;}
 #pitch.select-mode{box-shadow:inset 0 0 0 2px #3fb950;}
 
@@ -361,6 +366,15 @@ body{
 }
 .fp:hover .fp-x{opacity:1;pointer-events:auto;}
 .fp-x:hover{transform:scale(1.2);}
+.fp.show-x .fp-x{opacity:1;pointer-events:auto;}
+
+/* ══ 상대편 / 공 아이콘 ══ */
+.fp.opp .fp-c{background:#1a1a1a;border-color:#f85149;}
+.fp.ball{width:30px;}
+.fp.ball .fp-c{
+  width:26px;height:26px;font-size:14px;
+  background:#f5f5f5;border-color:#222;color:#222;
+}
 
 /* ══ SUBS ══ */
 #subs{background:#161b22;border-top:1px solid #30363d;flex-shrink:0;overflow:hidden;}
@@ -545,6 +559,26 @@ body{
 .draw-sep{width:1px;height:16px;background:#30363d;margin:0 2px;flex-shrink:0;}
 #draw-eraser-btn.on{background:#58a6ff !important;border-color:#58a6ff !important;color:#0d1117 !important;}
 
+/* ══ 작전판 전체화면 보기 ══ */
+#board-fs-exit-btn{
+  display:none;position:fixed;top:12px;right:12px;z-index:900;
+  padding:8px 16px;border-radius:20px;border:1px solid #30363d;
+  background:rgba(13,17,23,.92);color:#e6edf3;font-size:12px;font-weight:700;
+  cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.6);
+}
+body.board-fs #board-fs-exit-btn{display:block;}
+body.board-fs #board-fs-btn{display:none;}
+body.board-fs #sidebar,
+body.board-fs #mhdr,
+body.board-fs #mobile-topbar,
+body.board-fs #subs,
+body.board-fs #mobile-tabs,
+body.board-fs #mobile-overlay,
+body.board-fs #game-panel{display:none !important;}
+body.board-fs #main{width:100%;}
+body.board-fs #card{height:100%;}
+body.board-fs #pw{flex:1;height:100%;}
+
 /* ══════════════════════════════════════════
    MOBILE RESPONSIVE (≤ 768px)
 ══════════════════════════════════════════ */
@@ -556,17 +590,21 @@ body{
 
   /* mobile top bar */
   #mobile-topbar{
-    display:flex;align-items:center;gap:8px;
-    padding:8px 12px;background:#161b22;
+    display:flex;align-items:center;gap:6px;
+    padding:8px 10px;background:#161b22;
     border-bottom:1px solid #30363d;
     flex-shrink:0;height:46px;z-index:1;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
   }
+  #mobile-topbar::-webkit-scrollbar{display:none;}
   #mobile-topbar .mt-title{
     font-size:13px;font-weight:700;letter-spacing:1px;flex:1;color:#e6edf3;
+    min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   #mobile-topbar .mt-btn{
-    padding:5px 10px;border-radius:6px;border:1px solid #30363d;
-    background:#21262d;color:#c9d1d9;font-size:12px;cursor:pointer;white-space:nowrap;
+    padding:5px 9px;border-radius:6px;border:1px solid #30363d;
+    background:#21262d;color:#c9d1d9;font-size:11px;cursor:pointer;
+    white-space:nowrap;flex-shrink:0;
   }
   #mobile-topbar .mt-btn.pri{background:#238636;border-color:#2ea043;color:#fff;font-weight:700;}
 
@@ -627,23 +665,12 @@ body{
   }
   #draw-ctrl::-webkit-scrollbar{display:none;}
 
-  /* pitch area */
+  /* 작전판: JS(fitPitch)가 --pitch-w/--pitch-h 변수를 계산해 실제 폭에 맞춤 */
   #pw{
     flex:1;min-height:0;
     padding:4px;gap:4px;
     display:flex;align-items:flex-start;justify-content:center;
     overflow:hidden;
-  }
-  #pitch-clip{
-    width:100% !important;
-    height:auto !important;
-    overflow:visible !important;
-    flex-shrink:1;
-  }
-  #pitch{
-    transform-origin:top left;
-    width:400px !important;
-    height:552px !important;
   }
 
   /* subs: compact */
@@ -695,6 +722,7 @@ body{
 
 <!-- 모바일 오버레이 -->
 <div id="mobile-overlay" onclick="closeMobileSidebar()"></div>
+<button id="board-fs-exit-btn" onclick="toggleBoardFullscreen()">✕ 돌아가기</button>
 
 <!-- 모달: JSON 가져오기 -->
 <div class="mbg" id="mImport">
@@ -814,11 +842,11 @@ body{
     </div>
     <!-- 연령대 필터 -->
     <div class="filter-bar age-bar">
-      <button class="fbtn age-btn active" onclick="setAge('ALL')">전체</button>
-      <button class="fbtn age-btn" onclick="setAge('20대')">20대</button>
-      <button class="fbtn age-btn" onclick="setAge('30대')">30대</button>
-      <button class="fbtn age-btn" onclick="setAge('40대')">40대</button>
-      <button class="fbtn age-btn" onclick="setAge('50대')">50대</button>
+      <button class="fbtn age-btn active" data-age="ALL" onclick="setAge('ALL')">전체</button>
+      <button class="fbtn age-btn" data-age="20대" onclick="setAge('20대')">20대</button>
+      <button class="fbtn age-btn" data-age="30대" onclick="setAge('30대')">30대</button>
+      <button class="fbtn age-btn" data-age="40대" onclick="setAge('40대')">40대</button>
+      <button class="fbtn age-btn" data-age="50대" onclick="setAge('50대')">50대</button>
     </div>
     <!-- 검색 -->
     <div class="search-wrap">
@@ -917,8 +945,11 @@ body{
       <button class="cbtn pri" onclick="applyFormation()">자동 배치</button>
       <button class="cbtn" onclick="clearPitch()">⬜ 비우기</button>
       <button class="cbtn" id="pos-guide-btn" onclick="togglePositionGuide()">📍 포지션</button>
+      <button class="cbtn" onclick="addBall()">⚽ 공</button>
+      <button class="cbtn" onclick="addOpponent()">🔴 상대 +</button>
       <button class="cbtn" onclick="saveImage()">📸 이미지</button>
       <button class="cbtn" id="annot-btn" onclick="toggleDrawMode()">✏️ 필기</button>
+      <button class="cbtn" id="board-fs-btn" onclick="toggleBoardFullscreen()">⛶ 전체화면</button>
       <div class="ctrl-sep"></div>
       <div class="vtbar">
         <button class="vtbtn active" id="vt-full" onclick="setPitchView('full')">전체</button>
@@ -1105,6 +1136,7 @@ const DEFAULT_ROSTER = [
 
 const POS_COLOR = {GK:'#e67e22',DF:'#2980b9',MF:'#27ae60',FW:'#c0392b'};
 const AGE_CLASS = {'20대':'age-tag-20','30대':'age-tag-30','40대':'age-tag-40','50대':'age-tag-50'};
+const AGE_ORDER = {'50대':0,'40대':1,'30대':2,'20대':3};
 
 const FORMATIONS = {
   '4-3-3':   [[50,90],[12,72],[34,72],[66,72],[88,72],[24,53],[50,53],[76,53],[18,26],[50,20],[82,26]],
@@ -1133,6 +1165,8 @@ let gameLog          = JSON.parse(localStorage.getItem('dasinfc_game_log') || '[
 let currentGameId    = localStorage.getItem('dasinfc_current_game_id') || null;
 let currentGameInfo  = JSON.parse(localStorage.getItem('dasinfc_current_game_info') || 'null') || {date:'',opp:'',venue:''};
 let pitchView = localStorage.getItem('dasinfc_view') || 'full';
+let opponents = JSON.parse(localStorage.getItem('dasinfc_opponents') || '[]'); // [{id,x,y}]
+let ballPos   = JSON.parse(localStorage.getItem('dasinfc_ball') || 'null');    // {x,y} | null
 
 // 기본 명단 로드 — 버전이 바뀌었거나 데이터가 없으면 리셋
 const SEED_VER = 'v2_56players';
@@ -1143,7 +1177,7 @@ if(!players || localStorage.getItem('dasinfc_seed') !== SEED_VER) {
 }
 
 let currentFilter = 'ALL';
-let currentAge    = 'ALL';
+let ageFilters    = new Set(); // 비어있으면 전체 연령대
 let searchText    = '';
 let subsOpen      = false;
 let dragSrc       = null;
@@ -1196,7 +1230,7 @@ function renderHeader() {
 function getFiltered(pool) {
   return pool.filter(p=>{
     const mp = currentFilter==='ALL' || p.pos===currentFilter;
-    const ma = currentAge==='ALL'    || p.age===currentAge;
+    const ma = ageFilters.size===0    || ageFilters.has(p.age);
     const ms = !searchText            || p.name.includes(searchText);
     return mp && ma && ms;
   });
@@ -1339,7 +1373,101 @@ function renderPitch() {
 
     pitch.appendChild(el);
   });
+  renderExtras();
   renderPositionSpots();
+}
+
+// 터치·마우스 공용 드래그 + 탭하면 × 표시 (상대편/공 아이콘)
+function makeExtraDraggable(el, getObj){
+  el.addEventListener('pointerdown', e=>{
+    if(annotationMode) return;
+    if(e.target.closest('.fp-x')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    el.setPointerCapture(e.pointerId);
+    el.style.zIndex = '100';
+    let moved = false;
+    const startX = e.clientX, startY = e.clientY;
+
+    const onMove = ev=>{
+      ev.preventDefault();
+      if(Math.hypot(ev.clientX-startX, ev.clientY-startY) > 4) moved = true;
+      const pr = pitch.getBoundingClientRect();
+      const x = Math.max(2, Math.min(98, ((ev.clientX - pr.left) / pr.width)  * 100));
+      const y = Math.max(2, Math.min(98, ((ev.clientY - pr.top)  / pr.height) * 100));
+      el.style.left = x+'%';
+      el.style.top  = y+'%';
+      const obj = getObj();
+      obj.x = x; obj.y = y;
+    };
+    const onUp = ()=>{
+      el.style.zIndex = '';
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup',   onUp);
+      if(!moved) el.classList.toggle('show-x');
+      save();
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup',   onUp);
+  });
+}
+
+function renderExtras(){
+  opponents.forEach((op,idx)=>{
+    const el = document.createElement('div');
+    el.className = 'fp opp';
+    el.style.left = op.x+'%';
+    el.style.top  = op.y+'%';
+    el.innerHTML = `
+      <div class="fp-c">
+        <button class="fp-x" onclick="removeOpponent(event,${idx})">×</button>
+        ${idx+1}
+      </div>`;
+    makeExtraDraggable(el, ()=>opponents[idx]);
+    pitch.appendChild(el);
+  });
+
+  if(ballPos){
+    const el = document.createElement('div');
+    el.className = 'fp ball';
+    el.style.left = ballPos.x+'%';
+    el.style.top  = ballPos.y+'%';
+    el.innerHTML = `
+      <div class="fp-c">
+        <button class="fp-x" onclick="removeBall(event)">×</button>
+        ⚽
+      </div>`;
+    makeExtraDraggable(el, ()=>ballPos);
+    pitch.appendChild(el);
+  }
+}
+
+function addOpponent(){
+  const idx = opponents.length;
+  const col = idx % 5, row = Math.floor(idx/5);
+  const x = Math.max(6, Math.min(94, 50 + (col - 2) * 16));
+  const y = Math.max(6, Math.min(94, 30 + row * 14));
+  opponents.push({x, y});
+  save();
+  renderPitch();
+}
+function removeOpponent(e, idx){
+  e.stopPropagation();
+  opponents.splice(idx,1);
+  save();
+  renderPitch();
+}
+function addBall(){
+  if(ballPos) return;
+  ballPos = {x:50, y:60};
+  save();
+  renderPitch();
+}
+function removeBall(e){
+  e.stopPropagation();
+  ballPos = null;
+  save();
+  renderPitch();
 }
 
 function renderSubs() {
@@ -1388,6 +1516,7 @@ function toggleSubs() {
   const tog=document.getElementById('subs-tog');
   tog.classList.toggle('on',subsOpen);
   tog.textContent=subsOpen?'칩 보기 ▲':'카드 보기 ▼';
+  if(typeof fitPitch==='function') setTimeout(fitPitch,50);
 }
 
 function setPitchView(mode) {
@@ -1404,7 +1533,7 @@ function setPitchView(mode) {
     pitch.classList.remove('shift-up');
   }
   localStorage.setItem('dasinfc_view',mode);
-  if(typeof isMobileDevice === 'function' && isMobileDevice()) setTimeout(scalePitch,50);
+  if(typeof fitPitch === 'function') setTimeout(fitPitch,50);
 }
 
 // ══════════════════
@@ -1674,9 +1803,15 @@ function setPos(pos){
   renderRoster();
 }
 function setAge(age){
-  currentAge=age;
+  if(age==='ALL'){
+    ageFilters.clear();
+  } else {
+    if(ageFilters.has(age)) ageFilters.delete(age);
+    else ageFilters.add(age);
+  }
   document.querySelectorAll('.age-btn').forEach(b=>{
-    b.classList.toggle('active',b.textContent==={ALL:'전체','20대':'20대','30대':'30대','40대':'40대','50대':'50대'}[age]);
+    const a=b.dataset.age;
+    b.classList.toggle('active', a==='ALL' ? ageFilters.size===0 : ageFilters.has(a));
   });
   renderRoster();
 }
@@ -1754,6 +1889,7 @@ function toggleDrawMode(){
   annotCanvas.classList.toggle('draw-active', annotationMode);
   document.getElementById('draw-ctrl').classList.toggle('show', annotationMode);
   document.getElementById('annot-btn').classList.toggle('pri', annotationMode);
+  if(typeof fitPitch==='function') setTimeout(fitPitch,50);
 }
 
 function setDrawColor(c){
@@ -1912,7 +2048,10 @@ function renderGamePanel(){
   if(benchEl){
     const fieldIds=new Set(fieldPlayers.map(f=>f.id));
     const bench=players.filter(p=>currentAttendees.has(p.id)&&!fieldIds.has(p.id))
-      .sort((a,b)=>a.no-b.no);
+      .sort((a,b)=>{
+        const ao=AGE_ORDER[a.age]??4, bo=AGE_ORDER[b.age]??4;
+        return ao!==bo ? ao-bo : a.no-b.no;
+      });
     if(benchCntEl)benchCntEl.textContent=bench.length?`${bench.length}명`:'';
     benchEl.innerHTML=bench.length
       ?bench.map(p=>{
@@ -2258,6 +2397,8 @@ function save(){
   localStorage.setItem('dasinfc_roster',JSON.stringify(players));
   localStorage.setItem('dasinfc_field', JSON.stringify(fieldPlayers));
   localStorage.setItem('dasinfc_match', JSON.stringify(matchInfo));
+  localStorage.setItem('dasinfc_opponents', JSON.stringify(opponents));
+  localStorage.setItem('dasinfc_ball', JSON.stringify(ballPos));
 }
 
 // ══════════════════
@@ -2265,16 +2406,33 @@ function save(){
 // ══════════════════
 function isMobileDevice(){ return window.innerWidth <= 768; }
 
-function scalePitch(){
-  if(!isMobileDevice()) return;
-  const clip = document.getElementById('pitch-clip');
-  const pr   = document.getElementById('pitch');
-  const clipW = clip.getBoundingClientRect().width;
-  if(clipW <= 0) return;
-  const scale = clipW / 400;
-  pr.style.transform       = `scale(${scale})`;
-  pr.style.transformOrigin = 'top left';
-  clip.style.height        = Math.round(552 * scale) + 'px';
+function toggleBoardFullscreen(){
+  const on = document.body.classList.toggle('board-fs');
+  document.getElementById('board-fs-btn').classList.toggle('pri', on);
+  fitPitch();
+  setTimeout(fitPitch, 60);
+}
+
+// 작전판을 #pw 컨테이너 크기에 맞춰 --pitch-w/--pitch-h 변수로 조정
+// (transform:scale 대신 실제 레이아웃 크기를 바꿔 잘림 현상을 방지)
+function fitPitch(){
+  const boardFs = document.body.classList.contains('board-fs');
+  if(!isMobileDevice() && !boardFs){
+    document.documentElement.style.removeProperty('--pitch-w');
+    document.documentElement.style.removeProperty('--pitch-h');
+    return;
+  }
+  const pw = document.getElementById('pw');
+  const cs = getComputedStyle(pw);
+  const r  = pw.getBoundingClientRect();
+  const maxW = r.width  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const maxH = r.height - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom);
+  if(maxW<=0 || maxH<=0) return;
+  const ratio = 400/552;
+  let w = Math.min(maxW, maxH*ratio);
+  let h = w/ratio;
+  document.documentElement.style.setProperty('--pitch-w', Math.floor(w)+'px');
+  document.documentElement.style.setProperty('--pitch-h', Math.floor(h)+'px');
 }
 
 function toggleMobileSidebar(){
@@ -2406,8 +2564,10 @@ function toggleMobileGamePanel(){
 // ══════════════════
 setPitchView(pitchView);
 render();
-if(isMobileDevice()) setTimeout(scalePitch, 120);
-window.addEventListener('resize', ()=>{ if(isMobileDevice()) scalePitch(); });
+fitPitch();
+setTimeout(fitPitch, 150);
+window.addEventListener('resize', fitPitch);
+window.addEventListener('orientationchange', ()=>setTimeout(fitPitch,200));
 </script>
 
 <!-- 모바일 하단 탭 (데스크탑 숨김) -->

@@ -366,6 +366,13 @@ function loadAndGo(id) {
   localStorage.setItem('dasinfc_current_game_id',   id);
   localStorage.setItem('dasinfc_current_game_info', JSON.stringify({date:g.date||'',opp:g.opp||'',venue:g.venue||''}));
   localStorage.setItem('dasinfc_attendees',          JSON.stringify(g.attendees||[]));
+  if(g.lineup){
+    localStorage.setItem('dasinfc_field',     JSON.stringify(g.lineup.field||[]));
+    localStorage.setItem('dasinfc_opponents', JSON.stringify(g.lineup.opponents||[]));
+    localStorage.setItem('dasinfc_ball',      JSON.stringify(g.lineup.ball||null));
+    if(g.lineup.match)  localStorage.setItem('dasinfc_match',  JSON.stringify(g.lineup.match));
+    if(g.lineup.events) localStorage.setItem('dasinfc_events', JSON.stringify(g.lineup.events));
+  }
   // 작전판 이동은 href="index.html" 으로 처리
 }
 

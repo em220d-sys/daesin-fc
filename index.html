@@ -174,6 +174,22 @@ body{
   border-radius:4px;color:#fff;cursor:pointer;font-size:10px;
 }
 .h-edit:hover{background:rgba(255,255,255,.28);}
+.h-btns{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;gap:5px;}
+.h-btns .h-edit{position:static;transform:none;}
+.h-save{background:rgba(63,185,80,.35);border-color:rgba(120,230,130,.6);font-weight:700;}
+.h-save:hover{background:rgba(63,185,80,.55);}
+
+/* 작전판 연령대 인원 바 */
+#age-count{
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
+  padding:5px 10px;background:#0d1117;border-bottom:1px solid #21262d;flex-shrink:0;
+  font-size:12px;color:#c9d1d9;
+}
+.ac-item{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:12px;background:#161b22;border:1px solid #30363d;}
+.ac-item b{font-size:13px;color:#fff;}
+.ac-item.zero{opacity:.4;}
+.ac-dot{width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;}
+.ac-total{font-weight:700;color:#ffd700;margin-left:4px;}
 
 #ctrl{
   display:flex;align-items:center;gap:6px;padding:6px 14px;
@@ -578,6 +594,7 @@ body.board-fs #game-panel{display:none !important;}
 body.board-fs #main{width:100%;}
 body.board-fs #card{height:100%;}
 body.board-fs #pw{flex:1;height:100%;}
+body.board-fs #age-count{font-size:14px;}
 
 /* ══════════════════════════════════════════
    MOBILE RESPONSIVE (≤ 768px)
@@ -928,7 +945,10 @@ body.board-fs #pw{flex:1;height:100%;}
       <div class="h-league" id="h-league">K6 대전광역시 디비전 리그</div>
       <div class="h-xi">STARTING XI</div>
       <div class="h-vs" id="h-vs">대신FC</div>
-      <button class="h-edit" onclick="openHeaderEdit()">✏️ 편집</button>
+      <div class="h-btns">
+        <button class="h-edit" onclick="openHeaderEdit()">✏️ 편집</button>
+        <button class="h-edit h-save" id="h-save-btn" onclick="quickSaveGame()">💾 저장</button>
+      </div>
     </div>
     <div id="ctrl">
       <label>포메이션</label>
@@ -976,6 +996,9 @@ body.board-fs #pw{flex:1;height:100%;}
       <button class="cbtn" onclick="undoAnnotation()">↩ 실행취소</button>
       <button class="cbtn" onclick="clearAnnotation()">🗑️ 전체 삭제</button>
     </div>
+
+    <!-- 작전판 연령대별 인원 -->
+    <div id="age-count"></div>
 
     <div id="pw">
       <div id="pitch-clip" style="flex-shrink:0;">
@@ -1136,6 +1159,7 @@ const DEFAULT_ROSTER = [
 
 const POS_COLOR = {GK:'#e67e22',DF:'#2980b9',MF:'#27ae60',FW:'#c0392b'};
 const AGE_CLASS = {'20대':'age-tag-20','30대':'age-tag-30','40대':'age-tag-40','50대':'age-tag-50'};
+const AGE_COLOR = {'20대':'#2ea043','30대':'#1f6feb','40대':'#d9822b','50대':'#a371f7'};
 const AGE_ORDER = {'50대':0,'40대':1,'30대':2,'20대':3};
 
 const FORMATIONS = {
@@ -1309,14 +1333,32 @@ function togglePositionGuide(){
   renderPositionSpots();
 }
 
+function ageOf(fp){
+  return fp.age || (players.find(p=>p.id===fp.id)||{}).age || '';
+}
+
+function renderAgeCount(){
+  const el=document.getElementById('age-count');
+  if(!el)return;
+  const cnt={};
+  fieldPlayers.forEach(fp=>{const a=ageOf(fp);const k=AGE_COLOR[a]?a:'미분류';cnt[k]=(cnt[k]||0)+1;});
+  const keys=['20대','30대','40대','50대'];
+  if(cnt['미분류'])keys.push('미분류');
+  el.innerHTML=keys.map(k=>{
+    const n=cnt[k]||0;
+    return `<span class="ac-item ${n?'':'zero'}"><span class="ac-dot" style="background:${AGE_COLOR[k]||'#6e7681'}"></span>${k} <b>${n}</b>명</span>`;
+  }).join('')+`<span class="ac-total">합계 ${fieldPlayers.length}명</span>`;
+}
+
 function renderPitch() {
   document.querySelectorAll('.fp').forEach(e=>e.remove());
+  renderAgeCount();
   fieldPlayers.forEach((fp,idx)=>{
     const el = document.createElement('div');
     el.className='fp';
     el.style.left=fp.x+'%';
     el.style.top =fp.y+'%';
-    const c=POS_COLOR[fp.pos]||'#888';
+    const c=AGE_COLOR[ageOf(fp)]||'#6e7681';
     el.innerHTML=`
       <div class="fp-c" style="background:${c}">
         <button class="fp-x" onclick="removeFP(event,${idx})">×</button>
@@ -2266,9 +2308,21 @@ function loadGame(id){
   localStorage.setItem('dasinfc_current_game_id',id);
   localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
   saveAttendees();
+  if(g.lineup)restoreLineup(g.lineup);
   renderRoster();
   renderGamePanel();
   renderAttendTab();
+}
+
+// 저장된 경기의 작전판(라인업·상대·공·경기기록) 복원
+function restoreLineup(l){
+  fieldPlayers=l.field||[];
+  opponents=l.opponents||[];
+  ballPos=l.ball||null;
+  if(l.match)matchInfo=l.match;
+  if(l.events){matchEvents=l.events;localStorage.setItem('dasinfc_events',JSON.stringify(matchEvents));}
+  if(l.formation)document.getElementById('fsel').value=l.formation;
+  render();
 }
 
 function deleteGame(e,id){
@@ -2375,6 +2429,41 @@ function saveMatchModal(){
   const g=gameLog.find(x=>x.id===currentGameId);
   stEl.textContent=`수정 중: ${g?.date||'날짜 미입력'} vs ${g?.opp||'상대팀'}`;
   stEl.style.color='#58a6ff';
+}
+
+// 헤더 💾 저장: 현재 경기(참석·라인업·경기기록)를 경기 기록에 저장
+function quickSaveGame(){
+  if(!currentGameInfo.date){
+    const d=new Date();
+    currentGameInfo={...currentGameInfo,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+  }
+  const {date='',opp='',venue=''}=currentGameInfo;
+  const fieldIds=new Set(fieldPlayers.map(f=>f.id));
+  const attendeeArr=[...currentAttendees];
+  const starters=attendeeArr.filter(id=>fieldIds.has(id)).length;
+  const lineup={
+    formation:document.getElementById('fsel').value,
+    field:fieldPlayers,opponents,ball:ballPos,
+    match:matchInfo,events:matchEvents
+  };
+  const data={date,opp,venue,attendees:attendeeArr,starters,lineup,savedAt:Date.now()};
+
+  if(currentGameId && gameLog.some(g=>g.id===currentGameId)){
+    const idx=gameLog.findIndex(g=>g.id===currentGameId);
+    gameLog[idx]={...gameLog[idx],...data};
+  }else{
+    currentGameId=uid();
+    localStorage.setItem('dasinfc_current_game_id',currentGameId);
+    gameLog.push({id:currentGameId,...data,createdAt:Date.now()});
+  }
+  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
+  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  renderGameLog();
+  if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
+
+  const btn=document.getElementById('h-save-btn');
+  btn.textContent='✅ 저장됨';
+  setTimeout(()=>{btn.textContent='💾 저장';},1500);
 }
 
 function newGameFromModal(){

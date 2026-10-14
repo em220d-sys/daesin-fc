@@ -109,7 +109,7 @@ body{
 .age-tag-20{background:#1c3a1c;color:#56d364;}
 .age-tag-30{background:#1c2e3a;color:#58a6ff;}
 .age-tag-40{background:#3a2c1c;color:#f0883e;}
-.age-tag-50{background:#3a1c1c;color:#f85149;}
+.age-tag-50{background:#3a1f19;color:#e8735a;}
 .dbtn{
   background:none;border:none;color:#f85149;cursor:pointer;
   font-size:12px;padding:2px 4px;border-radius:3px;flex-shrink:0;transition:all .15s;
@@ -1159,7 +1159,7 @@ const DEFAULT_ROSTER = [
 
 const POS_COLOR = {GK:'#e67e22',DF:'#2980b9',MF:'#27ae60',FW:'#c0392b'};
 const AGE_CLASS = {'20대':'age-tag-20','30대':'age-tag-30','40대':'age-tag-40','50대':'age-tag-50'};
-const AGE_COLOR = {'20대':'#2ea043','30대':'#1f6feb','40대':'#d9822b','50대':'#a371f7'};
+const AGE_COLOR = {'20대':'#2ea043','30대':'#1f6feb','40대':'#d9822b','50대':'#b5442c'};
 const AGE_ORDER = {'50대':0,'40대':1,'30대':2,'20대':3};
 
 const FORMATIONS = {
@@ -1274,7 +1274,7 @@ function renderRoster() {
   el.innerHTML = list.map(p=>{
     const onField = fieldIds.has(p.id);
     const sel = selectedForPlace && selectedForPlace.id===p.id;
-    const c   = POS_COLOR[p.pos]||'#888';
+    const c   = AGE_COLOR[p.age]||'#6e7681';
     const ac  = AGE_CLASS[p.age]||'';
     const isAtt = currentAttendees.has(p.id);
     const birthLabel = p.birth ? `<span class="ptag" style="color:#6e7681;">${p.birth.replace(/-/g,'.')}</span>` : '';
@@ -1528,7 +1528,7 @@ function renderSubs() {
   // 카드 뷰
   document.getElementById('sub-cards').innerHTML = subs.length
     ? subs.map(p=>{
-        const c=POS_COLOR[p.pos]||'#888';
+        const c=AGE_COLOR[p.age]||'#6e7681';
         const ac=AGE_CLASS[p.age]||'';
         const sel=selectedForPlace&&selectedForPlace.id===p.id;
         return `<div class="sub-card ${sel?'selected':''}"
@@ -2097,7 +2097,7 @@ function renderGamePanel(){
     if(benchCntEl)benchCntEl.textContent=bench.length?`${bench.length}명`:'';
     benchEl.innerHTML=bench.length
       ?bench.map(p=>{
-          const c=POS_COLOR[p.pos]||'#888';
+          const c=AGE_COLOR[p.age]||'#6e7681';
           const ac=AGE_CLASS[p.age]||'';
           return `<div class="gp-event gp-bench-item"
             draggable="true"
@@ -2225,7 +2225,7 @@ function renderAttendTab(){
     listEl.innerHTML='<div class="gl-empty">선수명단에서 ○를 클릭하면<br>참석 선수로 표시됩니다</div>';
   }else{
     listEl.innerHTML=attending.map(p=>{
-      const c=POS_COLOR[p.pos]||'#888';
+      const c=AGE_COLOR[p.age]||'#6e7681';
       const ac=AGE_CLASS[p.age]||'';
       const onField=fieldIds.has(p.id);
       return `<div class="ap-item">
@@ -2378,7 +2378,7 @@ function openMatchModal(){
       : '0명 — 선수명단에서 ○를 체크하세요';
 
   document.getElementById('mm-chips').innerHTML = attending.map(p=>{
-    const c  = POS_COLOR[p.pos]||'#888';
+    const c  = AGE_COLOR[p.age]||'#6e7681';
     const ac = AGE_CLASS[p.age]||'';
     const onField = fieldIds.has(p.id);
     return `<span class="mm-player-chip ${onField?'on-field':''}">

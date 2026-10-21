@@ -187,6 +187,7 @@ body{
   <div class="game-list" id="game-list"></div>
 </div>
 
+<script src="sync.js"></script>
 <script>
 const POS_COLOR = {GK:'#e67e22',DF:'#2980b9',MF:'#27ae60',FW:'#c0392b'};
 const AGE_CLASS  = {'20대':'age-tag-20','30대':'age-tag-30','40대':'age-tag-40','50대':'age-tag-50'};
@@ -363,15 +364,15 @@ function renderDetail(id, bodyEl) {
 function loadAndGo(id) {
   const g = gameLog.find(x=>x.id===id);
   if(!g) return;
-  localStorage.setItem('dasinfc_current_game_id',   id);
-  localStorage.setItem('dasinfc_current_game_info', JSON.stringify({date:g.date||'',opp:g.opp||'',venue:g.venue||''}));
-  localStorage.setItem('dasinfc_attendees',          JSON.stringify(g.attendees||[]));
+  lsSet('dasinfc_current_game_id',   id);
+  lsSet('dasinfc_current_game_info', JSON.stringify({date:g.date||'',opp:g.opp||'',venue:g.venue||''}));
+  lsSet('dasinfc_attendees',          JSON.stringify(g.attendees||[]));
   if(g.lineup){
-    localStorage.setItem('dasinfc_field',     JSON.stringify(g.lineup.field||[]));
-    localStorage.setItem('dasinfc_opponents', JSON.stringify(g.lineup.opponents||[]));
-    localStorage.setItem('dasinfc_ball',      JSON.stringify(g.lineup.ball||null));
-    if(g.lineup.match)  localStorage.setItem('dasinfc_match',  JSON.stringify(g.lineup.match));
-    if(g.lineup.events) localStorage.setItem('dasinfc_events', JSON.stringify(g.lineup.events));
+    lsSet('dasinfc_field',     JSON.stringify(g.lineup.field||[]));
+    lsSet('dasinfc_opponents', JSON.stringify(g.lineup.opponents||[]));
+    lsSet('dasinfc_ball',      JSON.stringify(g.lineup.ball||null));
+    if(g.lineup.match)  lsSet('dasinfc_match',  JSON.stringify(g.lineup.match));
+    if(g.lineup.events) lsSet('dasinfc_events', JSON.stringify(g.lineup.events));
   }
   // 작전판 이동은 href="index.html" 으로 처리
 }
@@ -379,7 +380,7 @@ function loadAndGo(id) {
 function deleteGame(id) {
   if(!confirm('이 경기 기록을 삭제하시겠습니까?')) return;
   const log = JSON.parse(localStorage.getItem('dasinfc_game_log')||'[]');
-  localStorage.setItem('dasinfc_game_log', JSON.stringify(log.filter(g=>g.id!==id)));
+  lsSet('dasinfc_game_log', JSON.stringify(log.filter(g=>g.id!==id)));
   location.reload();
 }
 

@@ -178,6 +178,8 @@ body{
 .h-btns .h-edit{position:static;transform:none;}
 .h-save{background:rgba(63,185,80,.35);border-color:rgba(120,230,130,.6);font-weight:700;}
 .h-save:hover{background:rgba(63,185,80,.55);}
+.h-sync{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:10px;opacity:.85;}
+.h-sync.err{color:#ffd33d;opacity:1;font-weight:700;}
 
 /* 작전판 연령대 인원 바 */
 #age-count{
@@ -942,6 +944,7 @@ body.board-fs #age-count{font-size:14px;}
       <button class="mt-btn" onclick="openMatchModal()">📋</button>
     </div>
     <div id="mhdr">
+      <div class="h-sync" id="h-sync"></div>
       <div class="h-league" id="h-league">K6 대전광역시 디비전 리그</div>
       <div class="h-xi">STARTING XI</div>
       <div class="h-vs" id="h-vs">대신FC</div>
@@ -1120,6 +1123,7 @@ body.board-fs #age-count{font-size:14px;}
   </div>
 </div>
 
+<script src="sync.js"></script>
 <script>
 // ══════════════════
 // 기본 선수 데이터 (사진에서 추출)
@@ -1196,8 +1200,8 @@ let ballPos   = JSON.parse(localStorage.getItem('dasinfc_ball') || 'null');    /
 const SEED_VER = 'v2_56players';
 if(!players || localStorage.getItem('dasinfc_seed') !== SEED_VER) {
   players = DEFAULT_ROSTER.map(p=>({...p, id:uid()}));
-  localStorage.setItem('dasinfc_roster', JSON.stringify(players));
-  localStorage.setItem('dasinfc_seed', SEED_VER);
+  lsSet('dasinfc_roster', JSON.stringify(players));
+  lsSet('dasinfc_seed', SEED_VER);
 }
 
 let currentFilter = 'ALL';
@@ -1574,7 +1578,7 @@ function setPitchView(mode) {
     pitchClip.classList.add('half');
     pitch.classList.remove('shift-up');
   }
-  localStorage.setItem('dasinfc_view',mode);
+  lsSet('dasinfc_view',mode);
   if(typeof fitPitch === 'function') setTimeout(fitPitch,50);
 }
 
@@ -2182,7 +2186,7 @@ function resetEvents(){
 }
 
 function saveEvents(){
-  localStorage.setItem('dasinfc_events',JSON.stringify(matchEvents));
+  lsSet('dasinfc_events',JSON.stringify(matchEvents));
 }
 
 // ══════════════════
@@ -2199,7 +2203,7 @@ function toggleAttend(e,id){
 }
 
 function saveAttendees(){
-  localStorage.setItem('dasinfc_attendees',JSON.stringify([...currentAttendees]));
+  lsSet('dasinfc_attendees',JSON.stringify([...currentAttendees]));
 }
 
 function renderAttendTab(){
@@ -2276,12 +2280,12 @@ function saveCurrentGame(){
     if(idx!==-1)gameLog[idx]={...gameLog[idx],date,opp,venue,attendees:attendeeArr,starters};
   }else{
     currentGameId=uid();
-    localStorage.setItem('dasinfc_current_game_id',currentGameId);
+    lsSet('dasinfc_current_game_id',currentGameId);
     gameLog.push({id:currentGameId,date,opp,venue,attendees:attendeeArr,starters,createdAt:Date.now()});
   }
 
-  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
-  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  lsSet('dasinfc_game_log',JSON.stringify(gameLog));
+  lsSet('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
   renderGameLog();
   alert('✅ 경기 기록 저장 완료!');
 }
@@ -2291,8 +2295,8 @@ function newGame(){
   currentGameId=null;
   currentAttendees.clear();
   currentGameInfo={date:'',opp:'',venue:''};
-  localStorage.removeItem('dasinfc_current_game_id');
-  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  lsDel('dasinfc_current_game_id');
+  lsSet('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
   saveAttendees();
   renderRoster();
   renderGamePanel();
@@ -2305,8 +2309,8 @@ function loadGame(id){
   currentGameId=id;
   currentGameInfo={date:g.date||'',opp:g.opp||'',venue:g.venue||''};
   currentAttendees=new Set(g.attendees||[]);
-  localStorage.setItem('dasinfc_current_game_id',id);
-  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  lsSet('dasinfc_current_game_id',id);
+  lsSet('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
   saveAttendees();
   if(g.lineup)restoreLineup(g.lineup);
   renderRoster();
@@ -2320,7 +2324,7 @@ function restoreLineup(l){
   opponents=l.opponents||[];
   ballPos=l.ball||null;
   if(l.match)matchInfo=l.match;
-  if(l.events){matchEvents=l.events;localStorage.setItem('dasinfc_events',JSON.stringify(matchEvents));}
+  if(l.events){matchEvents=l.events;lsSet('dasinfc_events',JSON.stringify(matchEvents));}
   if(l.formation)document.getElementById('fsel').value=l.formation;
   render();
 }
@@ -2331,9 +2335,9 @@ function deleteGame(e,id){
   gameLog=gameLog.filter(g=>g.id!==id);
   if(currentGameId===id){
     currentGameId=null;
-    localStorage.removeItem('dasinfc_current_game_id');
+    lsDel('dasinfc_current_game_id');
   }
-  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
+  lsSet('dasinfc_game_log',JSON.stringify(gameLog));
   renderGameLog();
 }
 
@@ -2410,11 +2414,11 @@ function saveMatchModal(){
     if(idx!==-1)gameLog[idx]={...gameLog[idx],date,opp,venue,attendees:attendeeArr,starters};
   }else{
     currentGameId=uid();
-    localStorage.setItem('dasinfc_current_game_id',currentGameId);
+    lsSet('dasinfc_current_game_id',currentGameId);
     gameLog.push({id:currentGameId,date,opp,venue,attendees:attendeeArr,starters,createdAt:Date.now()});
   }
-  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
-  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  lsSet('dasinfc_game_log',JSON.stringify(gameLog));
+  lsSet('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
   if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
 
   // 저장 완료 피드백
@@ -2453,11 +2457,11 @@ function quickSaveGame(){
     gameLog[idx]={...gameLog[idx],...data};
   }else{
     currentGameId=uid();
-    localStorage.setItem('dasinfc_current_game_id',currentGameId);
+    lsSet('dasinfc_current_game_id',currentGameId);
     gameLog.push({id:currentGameId,...data,createdAt:Date.now()});
   }
-  localStorage.setItem('dasinfc_game_log',JSON.stringify(gameLog));
-  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  lsSet('dasinfc_game_log',JSON.stringify(gameLog));
+  lsSet('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
   renderGameLog();
   if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
 
@@ -2471,8 +2475,8 @@ function newGameFromModal(){
   currentGameId=null;
   currentAttendees.clear();
   currentGameInfo={date:'',opp:'',venue:''};
-  localStorage.removeItem('dasinfc_current_game_id');
-  localStorage.setItem('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
+  lsDel('dasinfc_current_game_id');
+  lsSet('dasinfc_current_game_info',JSON.stringify(currentGameInfo));
   saveAttendees();
   closeModal('mMatch');
   renderRoster();renderGamePanel();
@@ -2483,11 +2487,11 @@ function newGameFromModal(){
 // PERSIST
 // ══════════════════
 function save(){
-  localStorage.setItem('dasinfc_roster',JSON.stringify(players));
-  localStorage.setItem('dasinfc_field', JSON.stringify(fieldPlayers));
-  localStorage.setItem('dasinfc_match', JSON.stringify(matchInfo));
-  localStorage.setItem('dasinfc_opponents', JSON.stringify(opponents));
-  localStorage.setItem('dasinfc_ball', JSON.stringify(ballPos));
+  lsSet('dasinfc_roster',JSON.stringify(players));
+  lsSet('dasinfc_field', JSON.stringify(fieldPlayers));
+  lsSet('dasinfc_match', JSON.stringify(matchInfo));
+  lsSet('dasinfc_opponents', JSON.stringify(opponents));
+  lsSet('dasinfc_ball', JSON.stringify(ballPos));
 }
 
 // ══════════════════
@@ -2612,7 +2616,7 @@ function toggleMobileGamePanel(){
   document.addEventListener('mouseup', ()=>{
     if(!dragging)return;
     dragging=false;
-    localStorage.setItem('dasinfc_gp_pos', JSON.stringify({
+    lsSet('dasinfc_gp_pos', JSON.stringify({
       left: panel.style.left, top: panel.style.top
     }));
   });
@@ -2642,7 +2646,7 @@ function toggleMobileGamePanel(){
   document.addEventListener('touchend', ()=>{
     if(!dragging)return;
     dragging=false;
-    localStorage.setItem('dasinfc_gp_pos', JSON.stringify({
+    lsSet('dasinfc_gp_pos', JSON.stringify({
       left:panel.style.left, top:panel.style.top
     }));
   });

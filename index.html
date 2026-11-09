@@ -750,6 +750,30 @@ body.board-fs #age-count{font-size:14px;}
 
   /* modals */
   .mbox{width:94vw !important;max-height:82vh !important;overflow-y:auto;}
+
+  /* 작전판이 하단 탭에 가려지지 않도록 탭 높이만큼 비워 둔다 */
+  #main{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px));}
+  body.board-fs #main{padding-bottom:0;}
+
+  /* 도구 버튼: 글자가 세로로 꺾이지 않게 한 줄로 */
+  #ctrl > *{flex-shrink:0;}
+  #ctrl .cbtn,#ctrl label{white-space:nowrap;}
+  #ctrl .cbtn{padding:5px 9px;}
+
+  /* 연령대 인원: 한 줄 */
+  #age-count{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none;
+    padding:3px 8px;gap:4px;font-size:11px;}
+  #age-count::-webkit-scrollbar{display:none;}
+  .ac-item{flex-shrink:0;padding:1px 7px;gap:4px;}
+  .ac-item b{font-size:12px;}
+  .ac-dot{width:9px;height:9px;}
+  .ac-total{flex-shrink:0;}
+
+  /* 배치 칸: 얇게 */
+  #place-bar{padding:4px 8px;}
+  .pb-hd{margin-bottom:3px;}
+  .pb-chip{min-height:34px;padding:3px 10px 3px 4px;font-size:12px;}
+  .pb-chip .pb-no{width:26px;height:26px;}
 }
 </style>
 </head>

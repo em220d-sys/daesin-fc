@@ -1710,12 +1710,13 @@ function addPlayer(){
 }
 
 // ── 만나이 / 연령대 자동 계산 ──
+const AGE_BASE_YEAR = new Date().getFullYear();
 function calcMannai(birthdate) {
-  // 2026년 기준 만나이 (연도 기준, 시대회 방식)
+  // 올해 기준 나이 (연도 기준, 시대회 방식) — 해가 바뀌면 자동으로 한 살씩 올라간다
   if (!birthdate) return null;
   const y = parseInt(birthdate.substring(0,4));
   if (!y || y < 1940 || y > 2010) return null;
-  return 2026 - y;
+  return AGE_BASE_YEAR - y;
 }
 function calcAgeGroup(birthdate) {
   const age = calcMannai(birthdate);
@@ -1726,6 +1727,20 @@ function calcAgeGroup(birthdate) {
   if (age >= 20) return '20대';
   return '';
 }
+// 생년월일이 있는 선수는 올해 기준으로 연령대를 다시 매긴다 (예: 새해에 40대 → 50대)
+function refreshAgeGroups(){
+  let changed = false;
+  const fix = p=>{
+    const g = calcAgeGroup(p.birth);
+    if(g && p.age !== g){ p.age = g; changed = true; }
+  };
+  players.forEach(fix);
+  fieldPlayers.forEach(fp=>{ if(!fp.birth){ const p=players.find(x=>x.id===fp.id); if(p) fp.birth=p.birth; } fix(fp); });
+  if(changed){
+    lsSet('dasinfc_roster', JSON.stringify(players));
+    lsSet('dasinfc_field',  JSON.stringify(fieldPlayers));
+  }
+}
 function autoAge(prefix) {
   const birth = document.getElementById(prefix+'-birth').value;
   const age   = calcMannai(birth);
@@ -1733,7 +1748,7 @@ function autoAge(prefix) {
   const hint  = document.getElementById(prefix+'-age-hint');
   const sel   = document.getElementById(prefix+'-age');
   if (age !== null) {
-    if (hint) hint.textContent = `→ 2026년 기준 만 ${age}세 (${group||'해당없음'}) 자동 설정`;
+    if (hint) hint.textContent = `→ ${AGE_BASE_YEAR}년 기준 ${age}세 (${group||'해당없음'}) 자동 설정`;
     if (group) sel.value = group;
   } else {
     if (hint) hint.textContent = '';
@@ -1751,7 +1766,7 @@ function openEdit(e,id){
   document.getElementById('edit-pos').value   = p.pos;
   document.getElementById('edit-age').value   = p.age||'';
   document.getElementById('edit-age-hint').textContent = p.birth
-    ? `→ 2026년 기준 만 ${calcMannai(p.birth)}세 (${calcAgeGroup(p.birth)})`
+    ? `→ ${AGE_BASE_YEAR}년 기준 ${calcMannai(p.birth)}세 (${calcAgeGroup(p.birth)})`
     : '';
   openModal('mEdit');
 }
@@ -2656,6 +2671,7 @@ function toggleMobileGamePanel(){
 // INIT
 // ══════════════════
 setPitchView(pitchView);
+refreshAgeGroups();
 render();
 fitPitch();
 setTimeout(fitPitch, 150);

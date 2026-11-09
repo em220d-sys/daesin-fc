@@ -193,6 +193,22 @@ body{
 .ac-dot{width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;}
 .ac-total{font-weight:700;color:#ffd700;margin-left:4px;}
 
+/* 작전판 배치 칸 */
+#place-bar{flex-shrink:0;background:#0d1117;border-bottom:1px solid #21262d;padding:6px 10px;}
+.pb-hd{display:flex;align-items:center;gap:8px;font-size:11px;color:#8b949e;margin-bottom:5px;min-width:0;}
+.pb-title{font-weight:700;color:#c9d1d9;flex-shrink:0;}
+#pb-hint{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pb-hint.on{color:#3fb950;font-weight:700;}
+.pb-tog{flex-shrink:0;font-size:11px;padding:3px 9px;border-radius:12px;background:#161b22;border:1px solid #30363d;color:#c9d1d9;cursor:pointer;}
+#pb-list{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#pb-list::-webkit-scrollbar{display:none;}
+.pb-chip{flex-shrink:0;display:flex;align-items:center;gap:6px;min-height:38px;padding:4px 12px 4px 5px;border-radius:20px;
+  background:#161b22;border:1px solid #30363d;color:#e6edf3;font-size:13px;cursor:pointer;user-select:none;-webkit-user-select:none;}
+.pb-chip .pb-no{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:11px;color:#fff;border:1.5px solid #fff;}
+.pb-chip.sel{border-color:#3fb950;background:#12261a;box-shadow:inset 0 0 0 1px #3fb950;}
+.pb-empty{font-size:11px;color:#484f58;padding:8px 0;}
+
 #ctrl{
   display:flex;align-items:center;gap:6px;padding:6px 14px;
   background:#161b22;border-bottom:1px solid #30363d;flex-wrap:wrap;
@@ -395,7 +411,7 @@ body{
 }
 
 /* ══ SUBS ══ */
-#subs{background:#161b22;border-top:1px solid #30363d;flex-shrink:0;overflow:hidden;}
+#subs{display:none!important;background:#161b22;border-top:1px solid #30363d;flex-shrink:0;overflow:hidden;}
 .subs-hd{display:flex;align-items:center;gap:7px;padding:5px 14px;}
 .subs-hd h4{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#484f58;}
 .sub-count-badge{background:#30363d;color:#8b949e;padding:1px 6px;border-radius:8px;font-size:10px;}
@@ -1003,6 +1019,16 @@ body.board-fs #age-count{font-size:14px;}
     <!-- 작전판 연령대별 인원 -->
     <div id="age-count"></div>
 
+    <!-- 작전판 배치 칸: 선수를 누른 뒤 작전판 위치를 누르면 배치 -->
+    <div id="place-bar">
+      <div class="pb-hd">
+        <span class="pb-title">➕ 배치</span>
+        <span id="pb-hint">선수를 누른 뒤 작전판에서 위치를 누르세요</span>
+        <button class="pb-tog" id="pb-tog" onclick="togglePlaceBarAll()">참석자만</button>
+      </div>
+      <div id="pb-list"></div>
+    </div>
+
     <div id="pw">
       <div id="pitch-clip" style="flex-shrink:0;">
         <div id="pitch">
@@ -1242,6 +1268,7 @@ function render() {
   renderRoster();
   renderPitch();
   renderSubs();
+  renderPlaceBar();
   renderGamePanel();
   if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
   save();
@@ -1666,7 +1693,7 @@ function clickSelect(e,id){
     pitch.classList.add('select-mode');
     document.getElementById('ctrl-hint').classList.add('show');
   }
-  renderRoster();renderSubs();
+  renderRoster();renderSubs();renderPlaceBar();
   if(positionGuide)renderPositionSpots();
 }
 function clearSelection(){
@@ -1674,6 +1701,40 @@ function clearSelection(){
   pitch.classList.remove('select-mode');
   document.getElementById('ctrl-hint').classList.remove('show');
   if(positionGuide)renderPositionSpots();
+  renderPlaceBar();
+}
+
+// 작전판 배치 칸: 참석 체크한 선수가 있으면 참석자만, 없으면 전체 선수 중 작전판에 없는 선수를 보여준다
+let placeBarAll = false;
+function togglePlaceBarAll(){ placeBarAll=!placeBarAll; renderPlaceBar(); }
+function renderPlaceBar(){
+  const listEl=document.getElementById('pb-list');
+  if(!listEl)return;
+  const fieldIds=new Set(fieldPlayers.map(f=>f.id));
+  const attOnly=!placeBarAll && currentAttendees.size>0;
+  const list=players.filter(p=>!fieldIds.has(p.id)&&(!attOnly||currentAttendees.has(p.id)))
+                    .sort((a,b)=>a.no-b.no);
+  const tog=document.getElementById('pb-tog');
+  tog.style.display=currentAttendees.size>0?'':'none';
+  tog.textContent=attOnly?'참석자만 ▾':'전체 ▾';
+  const hint=document.getElementById('pb-hint');
+  if(selectedForPlace){
+    hint.textContent=`${selectedForPlace.name} → 작전판에서 놓을 위치를 누르세요`;
+    hint.classList.add('on');
+  }else{
+    hint.textContent='선수를 누른 뒤 작전판에서 위치를 누르세요';
+    hint.classList.remove('on');
+  }
+  listEl.innerHTML=list.length
+    ? list.map(p=>{
+        const c=AGE_COLOR[p.age]||'#6e7681';
+        const sel=selectedForPlace&&selectedForPlace.id===p.id;
+        return `<div class="pb-chip ${sel?'sel':''}" draggable="true"
+          ondragstart="onRosterDrag(event,'${p.id}')"
+          onclick="clickSelect(event,'${p.id}')">
+          <span class="pb-no" style="background:${c}">${p.no}</span>${p.name}</div>`;
+      }).join('')
+    : `<div class="pb-empty">${attOnly?'배치할 참석자가 없습니다 (전체 보기로 바꾸면 모든 선수가 보입니다)':'모든 선수가 작전판에 있습니다'}</div>`;
 }
 pitchClip.addEventListener('click',e=>{
   if(!selectedForPlace||e.target.closest('.fp'))return;
@@ -2214,6 +2275,7 @@ function toggleAttend(e,id){
   saveAttendees();
   renderRoster();
   renderGamePanel();
+  renderPlaceBar();
   if(document.getElementById('p-attend').style.display!=='none')renderAttendTab();
 }
 
